@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="feign-clients" />
+        <module name="auth-service" />
+        <module name="leave-service" />
+        <module name="api-gateway" />
+        <module name="med-visit-service" />
+        <module name="training-management-service" />
+        <module name="eureka-server" />
+        <module name="mail-service" />
+        <module name="notification-service" />
+        <module name="employee-service" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="authService" target="22" />
+      <module name="security" target="22" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
