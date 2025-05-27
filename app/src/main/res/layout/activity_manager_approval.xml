@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Calendar View -->
+
+    <!-- Selected Date Text -->
+    <com.github.sundeepk.compactcalendarview.CompactCalendarView
+        android:id="@+id/calendarView"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="36dp" />
+
+    <TextView
+        android:id="@+id/selectedDateTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/calendarView"
+        android:layout_marginTop="16dp"
+        android:text="Selected Date: No Date Selected"
+        android:textSize="16sp"
+        android:padding="16dp" />
+
+    <!-- Approve Button -->
+    <Button
+        android:id="@+id/approveButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/selectedDateTextView"
+        android:layout_marginTop="24dp"
+        android:text="Approve"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="32dp" />
+
+    <!-- Reject Button -->
+    <Button
+        android:id="@+id/rejectButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/selectedDateTextView"
+        android:layout_marginTop="24dp"
+        android:text="Reject"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="32dp" />
+
+</RelativeLayout>

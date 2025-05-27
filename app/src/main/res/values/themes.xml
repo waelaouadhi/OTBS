@@ -1,0 +1,27 @@
+<resources>
+    <!-- Main App Theme -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+
+        <item name="colorPrimary">@color/colorAccent
+        </item> <!-- Ensure colorPrimary is defined in colors.xml -->
+        <item name="colorPrimaryDark">@color/colorPrimaryDark
+        </item> <!-- Ensure colorPrimaryDark is defined in colors.xml -->
+        <item name="colorAccent">@color/colorAccent
+        </item> <!-- Ensure colorAccent is defined in colors.xml -->
+
+        <!-- Required for MaterialDatePicker -->
+        <item name="materialCalendarStyle">@style/ThemeMaterialCalendar</item>
+        <item name="materialCalendarFullscreenTheme">@style/ThemeMaterialCalendar</item>
+    </style>
+
+    <!-- Calendar Theme -->
+    <style name="ThemeMaterialCalendar" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">
+        <item name="colorPrimary">@color/colorAccent</item> <!-- Same color as in AppTheme to avoid duplication -->
+    </style>
+    <!-- Base application theme. -->
+    <style name="Base.AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+     <item name="colorPrimary">@color/colorPrimaryDark</item>
+        <item name="colorPrimary">@color/colorAccent</item>
+    </style>
+</resources>

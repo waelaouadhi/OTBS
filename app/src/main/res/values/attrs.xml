@@ -1,0 +1,12 @@
+<resources>
+    <declare-styleable name="CustomCalendarView">
+        <attr name="ccv_selected_day_background_color" format="color"/>
+        <attr name="ccv_selected_day_text_color" format="color"/>
+        <attr name="ccv_day_of_week_text_color" format="color"/>
+        <attr name="ccv_bg_color" format="color"/>
+        <attr name="ccv_current_day_background_color" format="color"/>
+        <attr name="ccv_text_color" format="color"/>
+        <attr name="ccv_current_day_text_color" format="color"/>
+        <attr name="ccv_month_text_color" format="color"/>
+    </declare-styleable>
+</resources>

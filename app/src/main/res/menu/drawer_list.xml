@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@drawable/outline_home_24"
+            android:title="Home" />
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@drawable/baseline_accessibility_new_24"
+            android:title="Profile" />
+        <item
+            android:id="@+id/nav_leaves"
+            android:icon="@drawable/baseline_holiday_village_24"
+            android:title="Leaves" />
+        <item
+            android:id="@+id/nav_training"
+            android:icon="@drawable/baseline_cast_for_education_24"
+            android:title="Trainings" />
+        <item
+            android:id="@+id/nav_doctor"
+            android:icon="@drawable/baseline_bloodtype_24"
+            android:title="Doctor" />
+    </group>
+
+    <item android:title="More">
+        <menu>
+            <item
+                android:id="@+id/nav_notification"
+                android:icon="@drawable/baseline_circle_notifications_24"
+                android:title="About" />
+            <item
+                android:id="@+id/nav_logout"
+                android:icon="@drawable/baseline_assist_walker_24"
+                android:title="Logout" />
+        </menu>
+    </item>
+</menu>

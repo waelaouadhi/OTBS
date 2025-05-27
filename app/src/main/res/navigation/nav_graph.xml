@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/notificationFragment">
+
+    <!-- NotificationFragment definition -->
+    <fragment
+        android:id="@+id/notificationFragment"
+        android:name="com.example.onetechbs.NotificationFragment"
+        android:label="Notifications"
+        tools:layout="@layout/fragment_notification">
+
+        <!-- Action to navigate to LeaveDetailsFragment -->
+        <action
+            android:id="@+id/action_notificationFragment_to_leaveDetailsFragment"
+            app:destination="@id/leaveDetailsFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim">
+            <argument
+                android:name="leaveId"
+                app:argType="string" />
+        </action>
+
+        <!-- Action to navigate to MedicalVisitFragment -->
+        <action
+            android:id="@+id/action_notificationFragment_to_medicalVisitFragment"
+            app:destination="@id/medicalVisitFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim">
+            <argument
+                android:name="visitId"
+                app:argType="string" />
+        </action>
+
+        <!-- Action to navigate to TrainingFragment -->
+        <action
+            android:id="@+id/action_notificationFragment_to_trainingFragment"
+            app:destination="@id/trainingFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim">
+            <argument
+                android:name="trainingId"
+                app:argType="string" />
+        </action>
+    </fragment>
+
+    <!-- Target fragment definitions (placeholders) -->
+    <fragment
+        android:id="@+id/leaveDetailsFragment"
+        android:name="com.example.onetechbs.LeaveDetailsFragment"
+        android:label="Leave Details"
+        tools:layout="@layout/fragment_leave_details" />
+
+    <fragment
+        android:id="@+id/medicalVisitFragment"
+        android:name="com.example.onetechbs.MedicalVisitFragment"
+        android:label="Medical Visit"
+        tools:layout="@layout/fragment_medical_visit" />
+
+    <fragment
+        android:id="@+id/trainingFragment"
+        android:name="com.example.onetechbs.TrainingFragment"
+        android:label="Training"
+        tools:layout="@layout/fragment_training" />
+</navigation>
