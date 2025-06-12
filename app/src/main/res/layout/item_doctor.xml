@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/doctorImageView"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/CircleImageView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:src="@drawable/doctor2"/>
+
+        <TextView
+            android:id="@+id/doctorNameTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            app:layout_constraintStart_toEndOf="@id/doctorImageView"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/doctorImageView"
+            tools:text="Dr. John Doe"/>
+
+        <TextView
+            android:id="@+id/specialtyTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            app:layout_constraintStart_toStartOf="@id/doctorNameTextView"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/doctorNameTextView"
+            tools:text="Cardiologist"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/availabilityChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:layout_constraintStart_toStartOf="@id/doctorNameTextView"
+            app:layout_constraintTop_toBottomOf="@id/specialtyTextView"
+            tools:text="Available"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/scheduleButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Schedule Visit"
+            android:textAllCaps="false"
+            app:cornerRadius="8dp"
+            app:backgroundTint="#FD5B00"
+            app:layout_constraintStart_toStartOf="@id/doctorNameTextView"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/availabilityChip"/>
+
+        <TextView
+            android:id="@+id/selectedTimeTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#666666"
+            android:textSize="14sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/scheduleButton"
+            app:layout_constraintTop_toBottomOf="@id/scheduleButton"
+            tools:text="Selected time: 14:30"
+            tools:visibility="visible" />
+        <Spinner
+            android:id="@+id/timeSlotSpinner"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/scheduleButton"
+            app:layout_constraintStart_toStartOf="@id/scheduleButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:visibility="visible" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/confirmButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Confirm Appointment"
+            android:textAllCaps="false"
+            app:cornerRadius="8dp"
+            app:backgroundTint="#4CAF50"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="@id/scheduleButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/selectedTimeTextView"
+            tools:visibility="visible"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView> 

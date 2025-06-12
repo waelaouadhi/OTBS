@@ -8,6 +8,7 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.example.onetechbs.db.AuthRequest
 import com.example.onetechbs.db.EmployeeResponse
@@ -26,6 +27,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var loginButton: Button
     private lateinit var forgotPwdButton: Button
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
@@ -74,6 +76,7 @@ class LoginActivity : AppCompatActivity() {
                                     if (response.isSuccessful) {
                                         val employee = response.body()
                                         prefs.edit().apply {
+                                            putString("userId", employee?.id) // Save employee ID as String
                                             putString("firstName", employee?.firstName)
                                             putString("lastName", employee?.lastName)
                                             putString("email", employee?.email)

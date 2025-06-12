@@ -1,44 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="16dp"
+    android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
-    app:cardElevation="4dp"
-    tools:context=".ui.training.TrainingAdapter">
+    app:cardElevation="4dp">
 
     <LinearLayout
-        android:orientation="vertical"
-        android:padding="16dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <TextView
             android:id="@+id/trainingName"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Training Name"
             android:textSize="18sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/trainingDate"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Training Date"
-            android:textSize="16sp"
-            android:textColor="#757575" />
+            android:layout_marginTop="8dp"
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/trainingDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/acceptButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Training Description"
-            android:textSize="14sp"
-            android:textColor="#616161"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="16dp"
+            android:text="Accept" />
+
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

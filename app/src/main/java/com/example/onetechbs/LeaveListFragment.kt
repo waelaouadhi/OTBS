@@ -1,6 +1,5 @@
 package com.example.onetechbs
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -9,74 +8,130 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.onetechbs.Leave
-import com.example.onetechbs.LeaveListAdapter
-import com.example.onetechbs.R
+import com.example.onetechbs.databinding.FragmentLeaveListBinding
+import com.example.onetechbs.db.LeaveResponse
 import com.example.onetechbs.network.RetrofitClient
+import com.example.onetechbs.util.SharedPreferencesManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.google.gson.Gson
 
 class LeaveListFragment : Fragment() {
 
-    private lateinit var leaveRecyclerView: RecyclerView
+    private var _binding: FragmentLeaveListBinding? = null
+    private val binding get() = _binding!!
+    
     private lateinit var leaveListAdapter: LeaveListAdapter
-    private val leaveList = mutableListOf<Leave>()
+    private val leaveList = mutableListOf<LeaveResponse>()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragment_leave_list, container, false)
-        leaveRecyclerView = view.findViewById(R.id.leaveRecyclerView)
-        leaveListAdapter = LeaveListAdapter(leaveList)
-        leaveRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-        leaveRecyclerView.adapter = leaveListAdapter
+    ): View {
+        _binding = FragmentLeaveListBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        fetchLeaves() // Fetch leaves on fragment load
-        return view
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupRecyclerView()
+        setupSwipeRefresh()
+        fetchLeaves()
+    }
+
+    private fun setupRecyclerView() {
+        leaveListAdapter = LeaveListAdapter()
+        binding.leaveRecyclerView.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = leaveListAdapter
+        }
+    }
+    private fun setupSwipeRefresh() {
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            fetchLeaves()
+        }
     }
 
     private fun fetchLeaves() {
         val token = RetrofitClient.getAuthToken()
+        val employeeId = getEmployeeId()
 
         if (token.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Unauthorized: Please login again.", Toast.LENGTH_SHORT).show()
+            showError("Unauthorized: Please login again.")
             return
         }
 
-        RetrofitClient.leaveService.getUserLeaves().enqueue(object : Callback<List<Leave>> {
-            override fun onResponse(call: Call<List<Leave>>, response: Response<List<Leave>>) {
+        if (employeeId == null) {
+            showError("Error: Employee ID not found")
+            return
+        }
+
+        showLoading(true)
+        RetrofitClient.leaveService.getEmployeeLeaves(employeeId).enqueue(object : Callback<List<LeaveResponse>> {
+            override fun onResponse(call: Call<List<LeaveResponse>>, response: Response<List<LeaveResponse>>) {
+                showLoading(false)
                 if (response.isSuccessful) {
+                    val leaves = response.body() ?: emptyList()
                     leaveList.clear()
-                    leaveList.addAll(response.body() ?: emptyList())
+                    leaveList.addAll(leaves)
                     leaveListAdapter.notifyDataSetChanged()
+                    updateUI()
                 } else {
                     handleError(response)
                 }
             }
 
-            override fun onFailure(call: Call<List<Leave>>, t: Throwable) {
-                Toast.makeText(requireContext(), "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            override fun onFailure(call: Call<List<LeaveResponse>>, t: Throwable) {
+                showLoading(false)
+                showError("Network error: ${t.message}")
                 Log.e("LeaveListFragment", "Error: ${t.message}", t)
             }
         })
     }
 
-    private fun handleError(response: Response<*>) {
-        val errorMessage = when (response.code()) {
-            401 -> {
-                // Optional: Clear token on unauthorized error
-                RetrofitClient.setAuthToken("")
-                "Unauthorized: Please login again."
-            }
-            403 -> "Access denied: You don't have permission."
-            404 -> "Resource not found."
-            else -> "Unexpected error: ${response.message()}"
-        }
+    private fun getEmployeeId(): String? {
+        return SharedPreferencesManager.getCurrentUserId(requireContext())
 
-        Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
-        Log.e("LeaveListFragment", "Error ${response.code()}: ${response.errorBody()?.string()}")
     }
+
+    private fun handleError(response: Response<List<LeaveResponse>>) {
+        val errorBody = response.errorBody()?.string()
+        val errorMessage = try {
+            val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+            errorResponse.message ?: "Unknown error occurred"
+        } catch (e: Exception) {
+            "Error: ${response.code()}"
+        }
+        showError(errorMessage)
+    }
+
+    private fun updateUI() {
+        if (leaveList.isEmpty()) {
+            binding.emptyStateLayout.visibility = View.VISIBLE
+            binding.leaveRecyclerView.visibility = View.GONE
+        } else {
+            binding.emptyStateLayout.visibility = View.GONE
+            binding.leaveRecyclerView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showLoading(show: Boolean) {
+        binding.swipeRefreshLayout.isRefreshing = show
+        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
+    }
+
+    private fun showError(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    data class ErrorResponse(
+        val message: String? = null
+    )
 }

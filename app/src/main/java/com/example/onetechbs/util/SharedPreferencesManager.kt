@@ -19,6 +19,12 @@ class SharedPreferencesManager private constructor(context: Context) {
             }
         }
 
+        fun getCurrentUserId(context: Context): String? {
+            return getInstance(context).getUserId()
+        }
+
+
+
         private const val KEY_AUTH_TOKEN = "auth_token"
         private const val KEY_REFRESH_TOKEN = "refresh_token"
         private const val KEY_ACCESS_EXPIRATION = "access_expiration"

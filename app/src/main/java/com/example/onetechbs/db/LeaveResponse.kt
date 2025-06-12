@@ -1,11 +1,8 @@
-package com.example.onetechbs.data
+package com.example.onetechbs.db
 
 import com.example.onetechbs.db.LeaveStatus
 import java.time.LocalDate
 import com.example.onetechbs.db.ELeaveType
-
-
-
 
  class LeaveResponse(
     val id: Long,
@@ -16,4 +13,3 @@ import com.example.onetechbs.db.ELeaveType
     val leaveType: ELeaveType,
     val status: LeaveStatus
 )
-

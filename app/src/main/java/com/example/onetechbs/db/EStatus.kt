@@ -1,7 +1,9 @@
 package com.example.onetechbs.db
 
 enum class EStatus {
-    PENDING,
-    ACCEPTED,
-    REJECTED
+    EN_ATTENTE,
+    APPROUVÉE,
+    REFUSÉE,
+    CONFIRMED,
+    PENDING
 }

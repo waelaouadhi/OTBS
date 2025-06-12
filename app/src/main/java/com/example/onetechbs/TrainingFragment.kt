@@ -1,18 +1,20 @@
 package com.example.onetechbs
 
-import android.media.midi.MidiSender
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.onetechbs.databinding.FragmentTrainingBinding
 import com.example.onetechbs.db.NotificationRequest
 import com.example.onetechbs.db.TrainingRequest
 import com.example.onetechbs.network.RetrofitClient
+import com.example.onetechbs.util.SharedPreferencesManager
 import com.google.android.material.datepicker.MaterialDatePicker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,6 +32,7 @@ class TrainingFragment : Fragment() {
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -40,6 +43,7 @@ class TrainingFragment : Fragment() {
         return binding.root
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun setupUI() {
         binding.selectDateRangeButton.setOnClickListener {
             showDateRangePicker()
@@ -72,10 +76,18 @@ class TrainingFragment : Fragment() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun submitTraining() {
         val title = binding.trainingNameEditText.text.toString().trim()
         val description = binding.trainingDescriptionEditText.text.toString().trim()
         val department = binding.departmentEditText.text.toString().trim()
+        val prefsManager = SharedPreferencesManager.getInstance(requireContext())
+        val token = prefsManager.getAuthToken()
+
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Authentication token missing! Please log in again.", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         if (title.isEmpty() || description.isEmpty() || department.isEmpty() ||
             selectedStartDate == null || selectedEndDate == null) {
@@ -92,26 +104,27 @@ class TrainingFragment : Fragment() {
             createdBy = "Manager"
         )
 
-        RetrofitClient.trainingService.createTraining(request)
-            .enqueue(object : retrofit2.Callback<Void> {
-                override fun onResponse(call: retrofit2.Call<Void>, response: retrofit2.Response<Void>) {
-                    if (response.isSuccessful) {
-                        Toast.makeText(requireContext(), "Training Created ✅", Toast.LENGTH_SHORT).show()
-                        clearInputs()
-                        createNotificationForTraining(title, description)
-                    } else {
-                        Toast.makeText(requireContext(), "Failed: ${response.errorBody()?.string()}", Toast.LENGTH_SHORT).show()
-                    }
+        RetrofitClient.trainingService.createTraining(
+            "Bearer $token", // Pass the token as the Authorization header
+            request
+        ).enqueue(object : retrofit2.Callback<Void> {
+            override fun onResponse(call: retrofit2.Call<Void>, response: retrofit2.Response<Void>) {
+                if (response.isSuccessful) {
+                    Toast.makeText(requireContext(), "Training Created ✅", Toast.LENGTH_SHORT).show()
+                    clearInputs()
+                    createNotificationForTraining(title, description)
+                } else {
+                    Toast.makeText(requireContext(), "Failed: ${response.errorBody()?.string()}", Toast.LENGTH_SHORT).show()
                 }
+            }
 
-                override fun onFailure(call: retrofit2.Call<Void>, t: Throwable) {
-                    Toast.makeText(requireContext(), "Error: ${t.message}", Toast.LENGTH_SHORT).show()
-                }
-            })
-    }
-
+            override fun onFailure(call: retrofit2.Call<Void>, t: Throwable) {
+                Toast.makeText(requireContext(), "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }@RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationForTraining(title: String, message: String,
-                                               recipient: String = "All Employees",sender: String = "Manager",type: String = "TRAINING",actionUrl: String = "http://example.com/training/details",read: Boolean = true
+                                              recipient: String = "All Employees", sender: String = "Manager", type: String = "TRAINING", actionUrl: String = "http://example.com/training/details", read: Boolean = true
                                                ) {
         lifecycleScope.launch {
             try {

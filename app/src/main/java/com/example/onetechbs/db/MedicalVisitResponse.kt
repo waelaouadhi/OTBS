@@ -1,13 +1,15 @@
 package com.example.onetechbs.db
 
-import java.time.LocalDate
-import java.time.LocalTime
+import com.google.gson.annotations.SerializedName
 
 data class MedicalVisitResponse(
     val id: Long,
+    @SerializedName("doctorName")
     val doctorName: String,
-    val visitDate: String, // Use String if it's a date string
+    @SerializedName("visitDate")
+    val visitDate: String,
+    @SerializedName("startTime")
     val startTime: String,
-    val endTime: String,
-    val numberOfAppointments: Int
+    @SerializedName("endTime")
+    val endTime: String
 )

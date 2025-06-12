@@ -24,6 +24,45 @@
             android:id="@+id/nav_doctor"
             android:icon="@drawable/baseline_bloodtype_24"
             android:title="Doctor" />
+
+        <item
+            android:id="@+id/nav_doctor_management"
+            android:icon="@drawable/baseline_bloodtype_24"
+            android:title="Doctor Managment" />
+        <item
+            android:id="@+id/nav_leaves_management"
+            android:icon="@drawable/baseline_calendar_month_24"
+            android:title="Leaves Manager" />
+
+        <!-- HR-specific -->
+        <item
+            android:id="@+id/nav_internal_recruiting"
+            android:icon="@drawable/baseline_work_outline_24"
+            android:title="Internal Recruiting"
+            />
+        <item
+            android:id="@+id/nav_review_applications"
+            android:icon="@drawable/baseline_list_alt_24"
+            android:title="Review Applications"
+            />
+
+        <!-- Employee + Manager -->
+        <item
+            android:id="@+id/nav_available_jobs"
+            android:icon="@drawable/baseline_work_24"
+            android:title="Available Jobs"
+             />
+
+            <item
+                android:id="@+id/nav_training"
+                android:icon="@drawable/ic_training"
+                android:title="Training"
+                tools:ignore="DuplicateIds" />
+            <item
+                android:id="@+id/nav_training_management"
+                android:icon="@drawable/ic_training_management"
+                android:title="Training Management" />
+
     </group>
 
     <item android:title="More">

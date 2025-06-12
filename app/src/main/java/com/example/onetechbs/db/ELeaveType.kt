@@ -1,6 +1,7 @@
 package com.example.onetechbs.db
 
 enum class ELeaveType {
+    ANNUEL,
     MALADIE,
     MATERNITÉ,
     PATERNITÉ,

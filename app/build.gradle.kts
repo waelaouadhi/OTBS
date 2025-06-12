@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.androidx.room.runtime.android)
     implementation(libs.androidx.swiperefreshlayout)
     implementation("com.google.code.gson:gson:2.13.1")
+    implementation(libs.androidx.tools.core)
 
     // Testing dependencies
     testImplementation(libs.junit)
@@ -111,7 +112,7 @@ dependencies {
 
     implementation ("io.reactivex.rxjava2:rxjava:2.2.21")
     implementation ("io.reactivex.rxjava2:rxandroid:2.1.1")
-
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
     implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
 
 

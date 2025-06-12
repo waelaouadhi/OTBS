@@ -1,12 +1,15 @@
 package com.example.onetechbs
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.appcompat.widget.AppCompatImageButton
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.onetechbs.network.RetrofitClient
@@ -14,29 +17,42 @@ import com.example.onetechbs.db.MessageResponse
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointForward
 import com.google.android.material.datepicker.MaterialDatePicker
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.toRequestBody
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
 class AddLeaveFragment : Fragment() {
 
-    private lateinit var btnUploadCertificate: Button
+    private lateinit var btnUploadCertificate: MaterialButton
     private lateinit var btnSelectDate: ImageButton
     private lateinit var tvSelectedDate: TextView
-    private lateinit var spinnerLeaveCategory: Spinner
-    private lateinit var btnSubmit: AppCompatImageButton
+    private lateinit var leaveCategoryInput: MaterialAutoCompleteTextView
+    private lateinit var btnSubmit: MaterialButton
+    private lateinit var progressBar: LinearProgressIndicator
+    private lateinit var tvSelectedFile: TextView
 
     private var startDate: String? = null
     private var endDate: String? = null
+    private var selectedFile: File? = null
     private val takenDateRanges = listOf(
         Pair("2025-05-01", "2025-05-05"),
         Pair("2025-06-10", "2025-06-15")
     )
+
+    private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { handleSelectedFile(it) }
+    }
+
     interface OnLeaveSubmittedListener {
         fun onLeaveSubmitted(category: String, startDate: String, endDate: String)
     }
@@ -51,16 +67,20 @@ class AddLeaveFragment : Fragment() {
         }
     }
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = inflater.inflate(R.layout.fragment_add_leave, container, false)
 
         btnUploadCertificate = view.findViewById(R.id.btnUploadCertificate)
         btnSelectDate = view.findViewById(R.id.btnSelectDate)
         tvSelectedDate = view.findViewById(R.id.tvSelectedDate)
-        spinnerLeaveCategory = view.findViewById(R.id.spinnerLeaveCategory)
+        leaveCategoryInput = view.findViewById(R.id.spinnerLeaveCategory)
         btnSubmit = view.findViewById(R.id.submitbtn1)
+        progressBar = view.findViewById(R.id.progressBar)
+        tvSelectedFile = view.findViewById(R.id.tvSelectedFile)
 
         btnUploadCertificate.visibility = View.GONE
+        progressBar.visibility = View.GONE
 
         val categories = listOf(
             "Choose your leave category",
@@ -74,18 +94,17 @@ class AddLeaveFragment : Fragment() {
             "Authorization"
         )
 
-        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, categories).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, categories)
+        leaveCategoryInput.setAdapter(adapter)
+        leaveCategoryInput.setText(categories[0], false)
+
+        leaveCategoryInput.setOnItemClickListener { _, _, position, _ ->
+            val selected = categories[position]
+            btnUploadCertificate.visibility = if (selected == "Sick Leave") View.VISIBLE else View.GONE
         }
-        spinnerLeaveCategory.adapter = adapter
 
-        spinnerLeaveCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                val selected = parent.getItemAtPosition(position).toString()
-                btnUploadCertificate.visibility = if (selected == "Sick Leave") View.VISIBLE else View.GONE
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {}
+        btnUploadCertificate.setOnClickListener {
+            getContent.launch("application/pdf")
         }
 
         btnSelectDate.setOnClickListener {
@@ -119,11 +138,15 @@ class AddLeaveFragment : Fragment() {
         }
 
         btnSubmit.setOnClickListener {
-            val category = spinnerLeaveCategory.selectedItem.toString()
+            val category = leaveCategoryInput.text.toString()
             if (category == "Choose your leave category" || !validateLeaveDates(startDate, endDate)) {
                 Toast.makeText(requireContext(), "Please correct the dates", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
+            }
 
+            if (category == "Sick Leave" && selectedFile == null) {
+                Toast.makeText(requireContext(), "Please attach a medical certificate", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
 
             val leaveType = mapCategoryToLeaveType(category)
@@ -133,12 +156,22 @@ class AddLeaveFragment : Fragment() {
 
             val startHourly = null
             val endHourly = null
-            val filePart: MultipartBody.Part? = null
+            val filePart = selectedFile?.let {
+                MultipartBody.Part.createFormData(
+                    "attachment",
+                    it.name,
+                    it.asRequestBody("application/pdf".toMediaTypeOrNull())
+                )
+            }
+
+            progressBar.visibility = View.VISIBLE
+            progressBar.setProgress(0, true)
 
             RetrofitClient.leaveService.applyLeave(
                 leaveTypeBody, startDateBody, endDateBody, startHourly, endHourly, filePart
             ).enqueue(object : Callback<MessageResponse> {
                 override fun onResponse(call: Call<MessageResponse>, response: Response<MessageResponse>) {
+                    progressBar.visibility = View.GONE
                     if (response.isSuccessful) {
                         leaveSubmittedListener?.onLeaveSubmitted(category, startDate!!, endDate!!)
                         Toast.makeText(requireContext(), "Leave submitted", Toast.LENGTH_SHORT).show()
@@ -149,12 +182,29 @@ class AddLeaveFragment : Fragment() {
                 }
 
                 override fun onFailure(call: Call<MessageResponse>, t: Throwable) {
+                    progressBar.visibility = View.GONE
                     Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
                 }
             })
         }
 
         return view
+    }
+
+    private fun handleSelectedFile(uri: Uri) {
+        try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri)
+            val file = File(requireContext().cacheDir, "medical_certificate_${System.currentTimeMillis()}.pdf")
+            inputStream?.use { input ->
+                file.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            selectedFile = file
+            tvSelectedFile.text = "Selected: ${file.name}"
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error selecting file: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun convertMillisToDate(millis: Long): String {
@@ -176,6 +226,7 @@ class AddLeaveFragment : Fragment() {
             else -> "AUTORISATION"
         }
     }
+
     private fun isDateRangeTaken(start: String, end: String): Boolean {
         val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val selectedStart = format.parse(start)
@@ -187,6 +238,7 @@ class AddLeaveFragment : Fragment() {
             selectedStart <= takenEnd && selectedEnd >= takenStart
         }
     }
+
     private fun validateLeaveDates(start: String?, end: String?): Boolean {
         if (start == null || end == null) return false
 
