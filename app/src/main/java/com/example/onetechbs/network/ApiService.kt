@@ -132,7 +132,7 @@ interface ApiService {
     ): Response<TrainingResponseDTO>
 
 
-
+//test
 
     @Multipart
     @POST("api/v1/internal-applications/job-offer/{jobOfferId}")
