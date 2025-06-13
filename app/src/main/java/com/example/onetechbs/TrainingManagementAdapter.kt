@@ -49,12 +49,12 @@ class TrainingManagementAdapter(
             descriptionTextView.text = training.description
 
             val totalParticipants = training.invitations.size
-            val acceptedParticipants = training.invitations.count { it.status == "CONFIRMED" }
+            val acceptedParticipants = training.invitations.count { it.status.name == "CONFIRMED" }
 
             participantsCountTextView.text = "Total Participants: $totalParticipants"
 
             val acceptedNames = training.invitations
-                .filter { it.status == "CONFIRMED" }
+                .filter { it.status.name == "CONFIRMED" }
                 .mapNotNull { it.employeeName.takeIf { name -> name.isNotBlank() } }
                 .joinToString(separator = "\n")
 

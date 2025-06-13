@@ -43,15 +43,15 @@ class TrainingAdapter(private val userId: String) : ListAdapter<TrainingResponse
             TrainingFilter.ALL -> allTrainings // Show all trainings relevant to the user (pre-filtered by fragment if employee)
             TrainingFilter.AVAILABLE -> allTrainings.filter { training ->
                 // Show trainings where the current user has a PENDING invitation
-                training.invitations.any { it.employeeId == userId && it.status == "PENDING" }
+                training.invitations.any { it.employeeId == userId && it.status.name == "PENDING" }
             }
             TrainingFilter.ACCEPTED -> allTrainings.filter { training ->
                 // Show trainings where the current user has a CONFIRMED invitation
-                training.invitations.any { it.employeeId == userId && it.status == "CONFIRMED" }
+                training.invitations.any { it.employeeId == userId && it.status.name == "CONFIRMED" }
             }
             TrainingFilter.REJECTED -> allTrainings.filter { training ->
                 // Show trainings where the current user has a REJECTED invitation
-                training.invitations.any { it.employeeId == userId && it.status == "REJECTED" }
+                training.invitations.any { it.employeeId == userId && it.status.name == "REJECTED" }
             }
         }
         submitList(filteredList)
@@ -91,7 +91,7 @@ class TrainingAdapter(private val userId: String) : ListAdapter<TrainingResponse
 
             if (currentUserInvitation != null) {
                 acceptButton.visibility = View.VISIBLE
-                when (currentUserInvitation.status) {
+                when (currentUserInvitation.status.name) {
                     "PENDING" -> {
                         acceptButton.isEnabled = true
                         acceptButton.text = "Accept"
@@ -135,7 +135,7 @@ class TrainingAdapter(private val userId: String) : ListAdapter<TrainingResponse
                     Log.d("TrainingAdapter", "Making API call to confirm invitation ID: $invitationId")
                     val response = RetrofitClient.trainingService.confirmInvitation("Bearer $token", invitationId)
                     Log.d("TrainingAdapter", "Response code: ${response.code()}, body: ${response.body()}, error: ${response.errorBody()?.string()}")
-                    
+
                     withContext(Dispatchers.Main) {
                         if (response.isSuccessful) {
                             Toast.makeText(itemView.context, "Training invitation accepted successfully!", Toast.LENGTH_SHORT).show()

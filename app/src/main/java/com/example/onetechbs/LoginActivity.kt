@@ -57,6 +57,10 @@ class LoginActivity : AppCompatActivity() {
                             jwtResponse?.let { jwt ->
                                 spm.saveAuthToken(jwt.accessToken ?: "", jwt.accessExpiration ?: 0)
                                 spm.saveRefreshToken(jwt.refreshToken ?: "", jwt.refreshExpiration ?: 0)
+                                Log.d("LoginActivity", "Saved accessToken: ${jwt.accessToken}")
+                                Log.d("LoginActivity", "Saved accessExpiration: ${jwt.accessExpiration}")
+                                Log.d("LoginActivity", "Saved refreshToken: ${jwt.refreshToken}")
+                                Log.d("LoginActivity", "Saved refreshExpiration: ${jwt.refreshExpiration}")
                             }
 
                             RetrofitClient.setAuthToken(spm.getAuthToken() ?: "")

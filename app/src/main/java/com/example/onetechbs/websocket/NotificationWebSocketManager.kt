@@ -70,7 +70,7 @@ object NotificationWebSocketManager {
             .build()
 
         // Initialize STOMP client with custom OkHttpClient
-        stompClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, "ws://192.168.1.155/ws-notification/websocket", null, client)
+        stompClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, "ws://172.31.4.235/ws-notification/websocket", null, client)
             .withClientHeartbeat(30000)
             .withServerHeartbeat(30000)
 

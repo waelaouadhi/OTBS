@@ -125,7 +125,7 @@ class TrainingFragment : Fragment() {
     }@RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationForTraining(title: String, message: String,
                                               recipient: String = "All Employees", sender: String = "Manager", type: String = "TRAINING", actionUrl: String = "http://example.com/training/details", read: Boolean = true
-                                               ) {
+    ) {
         lifecycleScope.launch {
             try {
                 val notification = NotificationRequest(

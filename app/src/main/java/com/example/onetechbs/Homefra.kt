@@ -1,12 +1,14 @@
 package com.example.onetechbs
 
 
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.onetechbs.databinding.FragmentHomefraBinding
@@ -31,6 +33,7 @@ class Homefra : Fragment() {
     private var availableLeaveTextView: TextView? = null
     private var leaveUsedTextView: TextView? = null
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -83,6 +86,7 @@ class Homefra : Fragment() {
         return binding.root
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun fetchLeaveBalance() {
         // Log the token being sent for debugging
         println("Sending token: ${RetrofitClient.getAuthToken()}") // Access the token using getter

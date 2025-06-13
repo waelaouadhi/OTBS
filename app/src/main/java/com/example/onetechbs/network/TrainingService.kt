@@ -29,11 +29,11 @@ interface TrainingService {
 
 
 
-        @GET("api/v1/trainings/{id}")
-        suspend fun getTrainingById(
-            @Header("Authorization") token: String,
-            @Path("id") id: Long
-        ): Response<TrainingResponseDTO>
+    @GET("api/v1/trainings/{id}")
+    suspend fun getTrainingById(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long
+    ): Response<TrainingResponseDTO>
 
 
     @PUT("api/v1/invitations/confirm/{id}")
@@ -42,5 +42,5 @@ interface TrainingService {
         @Path("id") invitationId: Long
     ): Response<MessageResponse>
     @GET("api/v1/trainings")
-    fun getAllTrainings(): Call<List<TrainingResponseDTO>>
+    fun getAllTrainings(@Header("Authorization") token: String,): Call<List<TrainingResponseDTO>>
 }

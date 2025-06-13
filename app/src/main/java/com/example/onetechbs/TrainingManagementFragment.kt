@@ -240,7 +240,7 @@ class TrainingManagementFragment : Fragment() {
         try {
             val totalTrainings = trainings.size
             val activeTrainings = trainings.count { training ->
-                training.invitations.any { it.status == "PENDING" }
+                training.invitations.any { it.status.name == "PENDING" }
             }
 
             binding.totalTrainingsTextView.text = "Total Trainings: $totalTrainings"
@@ -252,8 +252,8 @@ class TrainingManagementFragment : Fragment() {
     }
 
     private fun showTrainingDetails(training: TrainingResponseDTO) {
-        val acceptedCount = training.invitations.count { it.status == "ACCEPTED" }
-        val pendingCount = training.invitations.count { it.status == "PENDING" }
+        val acceptedCount = training.invitations.count { it.status.name == "ACCEPTED" }
+        val pendingCount = training.invitations.count { it.status.name == "PENDING" }
 
         val message = """
             Title: ${training.title}
