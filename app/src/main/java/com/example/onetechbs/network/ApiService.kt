@@ -173,8 +173,8 @@ interface ApiService {
     // ─────────────────────────────────────────────────────────────
     // 📄 CANDIDATES
     // ─────────────────────────────────────────────────────────────
-    @GET("/api/v1/candidates")
-    suspend fun listCandidates(): Response<List<CandidateResponseDTO>>
+    @GET("api/v1/candidates")
+    fun listCandidates(@Header("Authorization") token: String): Call<List<CandidateResponseDTO>>
 
     @Multipart
     @POST("api/v1/internal-applications/job-offer/{jobOfferId}")
@@ -184,20 +184,40 @@ interface ApiService {
         @Header("Authorization") authHeader: String
     ): Response<Void>
 
+
+    @POST("/api/v1/candidates")
+    fun addCandidate(@Body request: CandidateRequestDTO): Call<CandidateResponseDTO>
+
+    @PUT("/api/v1/candidates/{id}")
+    fun updateCandidate(@Path("id") id: Long, @Body request: CandidateRequestDTO): Call<CandidateResponseDTO>
+
+    @DELETE("/api/v1/candidates/{id}")
+    fun deleteCandidate(@Path("id") id: Long): Call<Void>
+
+    @GET("/api/v1/candidates/{id}")
+    fun getCandidate(@Path("id") id: Long): Call<CandidateResponseDTO>
+
+
     // ─────────────────────────────────────────────────────────────
     // 🏥 MEDICAL VISITS & APPOINTMENTS
     // ─────────────────────────────────────────────────────────────
     @POST("api/v1/medical-visits")
-    suspend fun submitMedicalVisit(request1: String, @Body request: MedicalVisitRequest): Response<Unit>
+    suspend fun submitMedicalVisit(
+        @Header("Authorization") authHeader: String,
+        @Body request: MedicalVisitRequest
+    ): Response<Unit>
 
     @GET("api/v1/medical-visits")
     suspend fun getDoctorVisits(): Response<List<MedicalVisitResponse>>
 
     @GET("api/v1/medical-visits")
-    suspend fun getMedicalVisits(): List<MedicalVisitResponse>
+    suspend fun getMedicalVisits(@Header("Authorization") token: String): List<MedicalVisitResponse>
 
     @DELETE("api/v1/medical-visits/{id}")
-    suspend fun deleteMedicalVisit(@Path("id") id: Long): Response<MessageResponseDTO>
+    fun deleteMedicalVisit(
+        @Path("id") visitId: Long,
+        @Header("Authorization") token: String
+    ): Call<MessageResponse>
 
     @POST("api/v1/appointments")
     suspend fun submitAppointment(
@@ -225,6 +245,7 @@ interface ApiService {
 
     @DELETE("api/v1/appointments/{id}")
     suspend fun deleteAppointment(@Path("id") id: Long): Response<MessageResponse>
+
 
     // ─────────────────────────────────────────────────────────────
     // 🔧 FACTORY METHOD

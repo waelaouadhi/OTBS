@@ -11,12 +11,17 @@ import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.onetechbs.HRLeaveManagementFragment.Companion
 import com.example.onetechbs.adapter.DoctorManagementAdapter
 import com.example.onetechbs.databinding.FragmentDoctorManagementBinding
+import com.example.onetechbs.db.MessageResponse
 import com.example.onetechbs.network.RetrofitClient
 import com.example.onetechbs.util.SharedPreferencesManager
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
 import retrofit2.HttpException
+import retrofit2.Response
 
 class DoctorManagementFragment : Fragment() {
 
@@ -83,12 +88,22 @@ class DoctorManagementFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun loadVisits() {
+        val context = requireContext()
+        val authToken = SharedPreferencesManager.getInstance(context).getAuthToken()
+        if (authToken.isNullOrEmpty()) {
+            Log.e(TAG, "Auth token is null or empty")
+            Toast.makeText(context, "Authentication token is missing. Please log in again.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        Log.d(Companion.TAG, "Auth token retrieved: $authToken")
+        RetrofitClient.setAuthToken(authToken)
+
         lifecycleScope.launch {
             try {
                 binding.swipeRefreshLayout.isRefreshing = true
-                val apiService = RetrofitClient.getInstance(requireContext())
-                val response = apiService.getMedicalVisits()
-                Log.d(TAG, "Visits loaded: ${response.size}")
+
+                val response = RetrofitClient.medService.getMedicalVisits("Bearer $authToken")
+
                 adapter.submitList(response)
                 updateEmptyState(response.isEmpty())
             } catch (e: HttpException) {
@@ -111,26 +126,33 @@ class DoctorManagementFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun deleteVisit(visitId: Long) {
-        lifecycleScope.launch {
-            try {
-                val apiService = RetrofitClient.getInstance(requireContext())
-                apiService.deleteMedicalVisit(visitId)
-                Toast.makeText(requireContext(), "Visit deleted", Toast.LENGTH_SHORT).show()
-                loadVisits()
-            } catch (e: HttpException) {
-                if (e.code() == 401) {
-                    handleUnauthorized()
-                } else {
-                    Log.e(TAG, "Failed to delete visit", e)
-                    Toast.makeText(requireContext(), "Failed to delete visit", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete visit", e)
-                Toast.makeText(requireContext(), "Failed to delete visit", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+        val token = SharedPreferencesManager.getInstance(requireContext()).getAuthToken()
 
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Token missing. Please login again.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        RetrofitClient.medService.deleteMedicalVisit(visitId, "Bearer $token")
+            .enqueue(object : Callback<MessageResponse> {
+                override fun onResponse(call: Call<MessageResponse>, response: Response<MessageResponse>) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(requireContext(), "Visit deleted ✅", Toast.LENGTH_SHORT).show()
+                        loadVisits()
+                    } else if (response.code() == 401) {
+                        handleUnauthorized()
+                    } else {
+                        Toast.makeText(requireContext(), "Error: ${response.code()}", Toast.LENGTH_SHORT).show()
+                        Log.e(TAG, "Error deleting visit: ${response.errorBody()?.string()}")
+                    }
+                }
+
+                override fun onFailure(call: Call<MessageResponse>, t: Throwable) {
+                    Toast.makeText(requireContext(), "Failed: ${t.message}", Toast.LENGTH_SHORT).show()
+                    Log.e(TAG, "Network error when deleting visit", t)
+                }
+            })
+    }
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

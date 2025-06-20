@@ -75,7 +75,7 @@ class TrainingListFragment : Fragment() {
         // Retrieve userId as String, default to empty string if not found
         val userId = prefs.getString("userId", "")
 
-        RetrofitClient.trainingService.getAllTrainings("Bearer ${RetrofitClient.getAuthToken()}").enqueue(object :
+        RetrofitClient.trainingService.getAllTrainings().enqueue(object :
             Callback<List<TrainingResponseDTO>> {
             override fun onResponse(
                 call: Call<List<TrainingResponseDTO>>,

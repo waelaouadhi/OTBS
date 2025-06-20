@@ -9,7 +9,6 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import com.example.onetechbs.databinding.ActivityHomeBinding
-import com.example.onetechbs.DoctorManagementFragment
 import com.google.android.material.navigation.NavigationView
 
 class home : AppCompatActivity() {
@@ -59,46 +58,31 @@ class home : AppCompatActivity() {
                 R.id.nav_doctor -> replaceFragment(DoctorListFragment())
                 R.id.nav_training -> replaceFragment(TrainingListFragment())
                 R.id.nav_notification -> replaceFragment(NotificationFragment())
-                R.id.nav_internal_recruiting -> {
-                    if (isHR()) {
-                        replaceFragment(InternalRecruitingFragment())
-                    } else {
-                        showAccessDenied()
-                    }
-                }
-                R.id.nav_review_applications -> {
-                    if (isHR()) {
-                        replaceFragment(ReviewApplicationsFragment())
-
-                    } else {
-                        showAccessDenied()
-                    }
-
-                }
-                R.id.nav_doctor_management -> {
-                    if (isHR()) {
-                        replaceFragment(DoctorManagementFragment())
-                    } else {
-                        showAccessDenied()
-                    }
-                }
-                R.id.nav_training_management -> {
-                    if (isManager()) {
-                        replaceFragment(TrainingManagementFragment())
-
-                    } else {
-                        showAccessDenied()
-                    }
-
-                }
-
                 R.id.nav_available_jobs -> replaceFragment(AvailableJobsFragment())
+
+                R.id.nav_internal_recruiting -> {
+                    if (isHR()) replaceFragment(InternalRecruitingFragment())
+                    else showAccessDenied()
+                }
+
+                R.id.nav_review_applications -> {
+                    if (isHR()) replaceFragment(ReviewApplicationsFragment())
+                    else showAccessDenied()
+                }
+
+                R.id.nav_doctor_management -> {
+                    if (isHR()) replaceFragment(DoctorManagementFragment())
+                    else showAccessDenied()
+                }
+
+                R.id.nav_training_management -> {
+                    if (isManager()) replaceFragment(TrainingManagementFragment())
+                    else showAccessDenied()
+                }
+
                 R.id.nav_leaves_management -> {
-                    if (isManager()) {
-                        replaceFragment(HRLeaveManagementFragment())
-                    } else {
-                        showAccessDenied()
-                    }
+                    if (isManager()) replaceFragment(HRLeaveManagementFragment())
+                    else showAccessDenied()
                 }
             }
             drawerLayout.closeDrawers()
@@ -107,31 +91,42 @@ class home : AppCompatActivity() {
     }
 
     private fun applyRoleBasedUI() {
-        val prefs = getSharedPreferences("auth", Context.MODE_PRIVATE)
-        val userRole = prefs.getString("role", "employee")
+        val role = getUserRole()
 
-        binding.bottomNavigationView.menu.findItem(R.id.training).isVisible = userRole == "Manager"
-        binding.bottomNavigationView.menu.findItem(R.id.doctor).isVisible = userRole == "HR"
+        val navMenu = navigationView.menu
 
-        // Drawer menu role restrictions
-        val navMenu = binding.navigationView.menu
-        navMenu.findItem(R.id.nav_internal_recruiting).isVisible = userRole == "HR"
-        navMenu.findItem(R.id.nav_review_applications).isVisible = userRole == "HR"
+        // Default: hide all role-specific items
+        navMenu.findItem(R.id.nav_internal_recruiting)?.isVisible = false
+        navMenu.findItem(R.id.nav_review_applications)?.isVisible = false
+        navMenu.findItem(R.id.nav_doctor_management)?.isVisible = false
+        navMenu.findItem(R.id.nav_training_management)?.isVisible = false
+        navMenu.findItem(R.id.nav_leaves_management)?.isVisible = false
+
+        // Bottom nav role-specific visibility
+        binding.bottomNavigationView.menu.findItem(R.id.training)?.isVisible = role == "Manager"
+        binding.bottomNavigationView.menu.findItem(R.id.doctor)?.isVisible = role == "HR"
+
+        // Show items based on role
+        if (role == "HR") {
+            navMenu.findItem(R.id.nav_internal_recruiting)?.isVisible = true
+            navMenu.findItem(R.id.nav_review_applications)?.isVisible = true
+            navMenu.findItem(R.id.nav_doctor_management)?.isVisible = true
+        } else if (role == "Manager") {
+            navMenu.findItem(R.id.nav_training_management)?.isVisible = true
+            navMenu.findItem(R.id.nav_leaves_management)?.isVisible = true
+        }
     }
 
-    private fun isHR(): Boolean {
+    private fun getUserRole(): String {
         val prefs = getSharedPreferences("auth", Context.MODE_PRIVATE)
-        val userRole = prefs.getString("role", "employee")
-        return userRole == "HR"
+        return prefs.getString("role", "employee") ?: "employee"
     }
-    private fun isManager(): Boolean {
-        val prefs = getSharedPreferences("auth", Context.MODE_PRIVATE)
-        val userRole = prefs.getString("role", "employee")
-        return userRole == "Manager"
-    }
+
+    private fun isHR(): Boolean = getUserRole() == "HR"
+    private fun isManager(): Boolean = getUserRole() == "Manager"
 
     private fun showAccessDenied() {
-        Toast.makeText(this, "Access denied: HR only", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Access denied for your role", Toast.LENGTH_SHORT).show()
     }
 
     private fun replaceFragment(fragment: Fragment) {

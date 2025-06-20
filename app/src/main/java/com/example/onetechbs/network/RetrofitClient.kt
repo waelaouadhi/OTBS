@@ -24,13 +24,15 @@ import java.util.concurrent.TimeUnit
 @RequiresApi(Build.VERSION_CODES.O)
 object RetrofitClient {
 
-    private const val AUTH_BASE_URL = "http://172.31.4.235:8081/"
-    private const val EMPLOYEE_BASE_URL = "http://172.31.4.235:8082/"
-    private const val LEAVE_BASE_URL = "http://172.31.4.235:8083/"
-    private const val TRAINING_BASE_URL = "http://172.31.4.235:8087/"
-    private const val NOTIFICATION_BASE_URL = "http://172.31.4.235:8086/"
-    private const val MED_BASE_URL = "http://172.31.4.235:8085/"
-    private const val RECRUITING_BASE_URL = "http://172.31.4.235:8088/"
+    private const val AUTH_BASE_URL = "http://172.31.4.154:8081/"
+    private const val EMPLOYEE_BASE_URL = "http://172.31.4.154:8082/"
+    private const val LEAVE_BASE_URL = "http://172.31.4.154:8083/"
+    private const val TRAINING_BASE_URL = "http://172.31.4.154:8087/"
+    private const val NOTIFICATION_BASE_URL = "http://172.31.4.154:8086/"
+    private const val MED_BASE_URL = "http://172.31.4.154:8085/"
+    private const val RECRUITING_BASE_URL = "http://172.31.4.154:8088/"
+    private const val CONDIDATE_BASE_URL = "http://172.31.4.154:8089/"
+
 
     private const val CONNECT_TIMEOUT = 30L
     private const val READ_TIMEOUT = 30L
@@ -46,13 +48,11 @@ object RetrofitClient {
     }
 
     private val authInterceptor = Interceptor { chain ->
-        val requestBuilder: Request.Builder = chain.request().newBuilder()
+        val requestBuilder = chain.request().newBuilder()
         if (token.isNotBlank()) {
-            val authHeader = "Bearer $token"
-            requestBuilder.addHeader("Authorization", authHeader)
-            Log.d("RetrofitClient", "Adding Authorization header: $authHeader")
-        } else {
-            Log.e("RetrofitClient", "Token is missing for request: ${chain.request().url}")
+            if (chain.request().header("Authorization") == null) {
+                requestBuilder.addHeader("Authorization", "Bearer $token")
+            }
         }
         chain.proceed(requestBuilder.build())
     }
@@ -105,6 +105,10 @@ object RetrofitClient {
 
     val recruitingService: ApiService by lazy {
         createRetrofit(RECRUITING_BASE_URL).create(ApiService::class.java)
+    }
+
+    val candidateService: ApiService by lazy {
+        createRetrofit(CONDIDATE_BASE_URL).create(ApiService::class.java)
     }
 
     val notificationService: ApiService by lazy {
@@ -194,5 +198,38 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
+    }
+    fun getTrainingService(context: Context): TrainingService {
+        val prefs = SharedPreferencesManager.getInstance(context)
+        val token = prefs.getAuthToken()
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val requestBuilder = chain.request().newBuilder()
+                if (!token.isNullOrEmpty()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                    Log.d("RetrofitClient", "✅ Token added to request: ${token.take(10)}...")
+                } else {
+                    Log.w("RetrofitClient", "⚠️ No auth token found")
+                }
+                chain.proceed(requestBuilder.build())
+            }
+            .addInterceptor(loggingInterceptor)
+            .build()
+
+        val gson = GsonBuilder()
+            .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .create()
+
+        return Retrofit.Builder()
+            .baseUrl(TRAINING_BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+            .create(TrainingService::class.java)
     }
 }

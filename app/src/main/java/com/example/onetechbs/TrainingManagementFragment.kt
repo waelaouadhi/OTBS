@@ -252,7 +252,7 @@ class TrainingManagementFragment : Fragment() {
     }
 
     private fun showTrainingDetails(training: TrainingResponseDTO) {
-        val acceptedCount = training.invitations.count { it.status.name == "ACCEPTED" }
+        val acceptedCount = training.invitations.count { it.status.name == "CONFIRMED" }
         val pendingCount = training.invitations.count { it.status.name == "PENDING" }
 
         val message = """

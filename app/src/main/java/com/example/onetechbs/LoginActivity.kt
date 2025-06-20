@@ -54,13 +54,19 @@ class LoginActivity : AppCompatActivity() {
                         if (response.isSuccessful) {
                             val jwtResponse = response.body()
                             val spm = SharedPreferencesManager.getInstance(this@LoginActivity)
+
                             jwtResponse?.let { jwt ->
-                                spm.saveAuthToken(jwt.accessToken ?: "", jwt.accessExpiration ?: 0)
-                                spm.saveRefreshToken(jwt.refreshToken ?: "", jwt.refreshExpiration ?: 0)
+                                val now = System.currentTimeMillis()
+                                val accessExpirationTimestamp = now + (jwt.accessExpiration ?: 0L) // expiration duration in ms
+                                val refreshExpirationTimestamp = now + (jwt.refreshExpiration ?: 0L)
+
+                                spm.saveAuthToken(jwt.accessToken ?: "", accessExpirationTimestamp)
+                                spm.saveRefreshToken(jwt.refreshToken ?: "", refreshExpirationTimestamp)
+
                                 Log.d("LoginActivity", "Saved accessToken: ${jwt.accessToken}")
-                                Log.d("LoginActivity", "Saved accessExpiration: ${jwt.accessExpiration}")
+                                Log.d("LoginActivity", "Saved accessExpiration (timestamp): $accessExpirationTimestamp")
                                 Log.d("LoginActivity", "Saved refreshToken: ${jwt.refreshToken}")
-                                Log.d("LoginActivity", "Saved refreshExpiration: ${jwt.refreshExpiration}")
+                                Log.d("LoginActivity", "Saved refreshExpiration (timestamp): $refreshExpirationTimestamp")
                             }
 
                             RetrofitClient.setAuthToken(spm.getAuthToken() ?: "")
@@ -69,9 +75,8 @@ class LoginActivity : AppCompatActivity() {
                             prefs.edit().apply {
                                 putString("accessToken", jwtResponse?.accessToken)
                                 putString("refreshToken", jwtResponse?.refreshToken)
-                                putLong("accessExpiration", jwtResponse?.accessExpiration ?: 0)
-                                putLong("refreshExpiration", jwtResponse?.refreshExpiration ?: 0)
-
+                                putLong("accessExpiration", System.currentTimeMillis() + (jwtResponse?.accessExpiration ?: 0L))
+                                putLong("refreshExpiration", System.currentTimeMillis() + (jwtResponse?.refreshExpiration ?: 0L))
                                 apply()
                             }
 

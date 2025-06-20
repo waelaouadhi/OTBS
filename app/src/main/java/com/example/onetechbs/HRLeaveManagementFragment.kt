@@ -8,7 +8,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.RadioButton
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
@@ -88,7 +87,9 @@ class HRLeaveManagementFragment : Fragment() {
             },
             onReject = { leave ->
                 Log.d(TAG, "Rejecting leave ID=${leave.id}")
-                leave.id?.let { handleReject(it) }
+                if (leave.id != null) {
+                    handleRejectWithValidation(leave)
+                }
             },
             onRequestPermission = {
                 requestStoragePermission()
@@ -101,6 +102,7 @@ class HRLeaveManagementFragment : Fragment() {
             setHasFixedSize(true)
         }
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.setOnRefreshListener {
@@ -211,7 +213,22 @@ class HRLeaveManagementFragment : Fragment() {
                 }
             })
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
+    private fun handleRejectWithValidation(leave: Leave) {
+        val today = LocalDate.now()
+
+        // Check if leave end date is in the past
+        if (leave.endDate != null && leave.endDate.isBefore(today)) {
+            // Show alert or Toast to user that reject is not possible
+            Toast.makeText(requireContext(), "Cannot reject leave: leave period is in the past.", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        // If validation passes, proceed with actual reject
+        leave.id?.let { handleReject(it) }
+    }
+
     private fun handleReject(leaveId: Long) {
         val token = SharedPreferencesManager.getInstance(requireContext()).getAuthToken()
 
@@ -225,7 +242,7 @@ class HRLeaveManagementFragment : Fragment() {
                 override fun onResponse(call: Call<MessageResponse>, response: Response<MessageResponse>) {
                     if (response.isSuccessful) {
                         Toast.makeText(requireContext(), "Leave rejected ❌", Toast.LENGTH_SHORT).show()
-                        // Refresh UI or reload list
+                        fetchLeaveRequests() // Refresh list after rejection
                     } else {
                         Toast.makeText(requireContext(), "Failed: ${response.errorBody()?.string()}", Toast.LENGTH_SHORT).show()
                     }
@@ -236,6 +253,7 @@ class HRLeaveManagementFragment : Fragment() {
                 }
             })
     }
+
     private fun showError(message: String) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
@@ -284,7 +302,7 @@ class HRLeaveManagementFragment : Fragment() {
     }
 
     companion object {
-        private const val TAG = "HRLeaveManagementFragment"
+        const val TAG = "HRLeaveManagementFragment"
         private const val STORAGE_PERMISSION_CODE = 100
     }
 }

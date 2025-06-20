@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -205,44 +206,46 @@ class AvailableJobsFragment : Fragment() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
+
     private fun handleViewApplicants(job: JobOfferResponseDTO) {
         val prefsManager = SharedPreferencesManager.getInstance(requireContext())
-        
-        // Check token expiration
+
         if (prefsManager.isTokenExpired()) {
-            // Token expired, redirect to login
-            val intent = Intent(requireContext(), LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
+            showSessionExpiredDialog()
             return
         }
-        
+
+        val token = prefsManager.getAuthToken()
+        if (token.isNullOrEmpty()) {
+            showSessionExpiredDialog()
+            return
+        }
+
+        val authHeader = "Bearer $token"
         showLoading(true)
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val response = RetrofitClient.apiService.listCandidates()
+
+        RetrofitClient.apiService.listCandidates(authHeader).enqueue(object : Callback<List<CandidateResponseDTO>> {
+            override fun onResponse(
+                call: Call<List<CandidateResponseDTO>>,
+                response: Response<List<CandidateResponseDTO>>
+            ) {
                 showLoading(false)
-                
                 if (response.isSuccessful) {
                     val candidates = response.body() ?: emptyList()
                     showCandidatesDialog(candidates)
                 } else if (response.code() == 401) {
-                    // Token became invalid during the request
-                    prefsManager.clearAuthData()
-                    val intent = Intent(requireContext(), LoginActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
+                    showSessionExpiredDialog()
                 } else {
                     handleApiError(response.code())
                 }
-            } catch (e: Exception) {
-                showLoading(false)
-                handleNetworkError(e)
             }
-        }
-    }
 
-    private fun showCandidatesDialog(candidates: List<CandidateResponseDTO>) {
+            override fun onFailure(call: Call<List<CandidateResponseDTO>>, t: Throwable) {
+                showLoading(false)
+                handleNetworkError(t)
+            }
+        })
+    }private fun showCandidatesDialog(candidates: List<CandidateResponseDTO>) {
         if (candidates.isEmpty()) {
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getString(R.string.applicants))
@@ -252,17 +255,19 @@ class AvailableJobsFragment : Fragment() {
             return
         }
 
-        val candidatesList = candidates.joinToString("\n") { candidate ->
-            "${candidate.candidateInfo.name} - ${candidate.candidateInfo.email}"
+        val message = buildString {
+            append("Showing all candidates.\n\n") // visual cue
+            candidates.forEach { candidate ->
+                append("${candidate.candidateInfo.name} - ${candidate.candidateInfo.email}\n")
+            }
         }
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.applicants))
-            .setMessage(candidatesList)
+            .setMessage(message)
             .setPositiveButton(getString(R.string.close), null)
             .show()
     }
-
     private fun handleApiError(code: Int) {
         val message = when (code) {
             401 -> getString(R.string.error_unauthorized)
@@ -281,6 +286,19 @@ class AvailableJobsFragment : Fragment() {
             else -> getString(R.string.error_network)
         }
         showError(message)
+    }
+    private fun showSessionExpiredDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Session Expired")
+            .setMessage("Your session has expired. Please log in again.")
+            .setCancelable(false)
+            .setPositiveButton("Login") { _, _ ->
+                SharedPreferencesManager.getInstance(requireContext()).clearAuthData()
+                val intent = Intent(requireContext(), LoginActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+            }
+            .show()
     }
 
     private fun isNetworkAvailable(): Boolean {
