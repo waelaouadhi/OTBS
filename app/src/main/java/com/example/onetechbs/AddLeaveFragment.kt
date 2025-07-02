@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import com.google.android.material.appbar.MaterialToolbar
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -78,6 +79,11 @@ class AddLeaveFragment : Fragment() {
         btnSubmit = view.findViewById(R.id.submitbtn1)
         progressBar = view.findViewById(R.id.progressBar)
         tvSelectedFile = view.findViewById(R.id.tvSelectedFile)
+
+        // toolbar back navigation
+        view.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
 
         btnUploadCertificate.visibility = View.GONE
         progressBar.visibility = View.GONE

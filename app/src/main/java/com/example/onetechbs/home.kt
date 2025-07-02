@@ -10,11 +10,14 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import com.example.onetechbs.databinding.ActivityHomeBinding
 import com.google.android.material.navigation.NavigationView
+import androidx.fragment.app.FragmentManager
 
 class home : AppCompatActivity() {
     private lateinit var binding: ActivityHomeBinding
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navigationView: NavigationView
+    private lateinit var toggle: ActionBarDrawerToggle
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,16 +26,30 @@ class home : AppCompatActivity() {
         drawerLayout = binding.drawerLayout
         navigationView = binding.navigationView
 
+        setSupportActionBar(binding.toolbar)
+
         setupBottomNavigation()
         applyRoleBasedUI()
 
-        val toggle = ActionBarDrawerToggle(
-            this, drawerLayout, R.string.open_drawer, R.string.close_drawer
+        toggle = ActionBarDrawerToggle(
+            this, drawerLayout, binding.toolbar, R.string.open_drawer, R.string.close_drawer
         )
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
         setupDrawerNavigation()
+
+        supportFragmentManager.addOnBackStackChangedListener {
+            updateToolbarForFragment()
+        }
+
+        binding.toolbar.setNavigationOnClickListener {
+            if (supportFragmentManager.backStackEntryCount > 0) {
+                supportFragmentManager.popBackStack()
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START)
+            }
+        }
     }
 
     private fun setupBottomNavigation() {
@@ -129,17 +146,45 @@ class home : AppCompatActivity() {
         Toast.makeText(this, "Access denied for your role", Toast.LENGTH_SHORT).show()
     }
 
-    private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
+    private fun replaceFragment(fragment: Fragment, addToBackStack: Boolean = true) {
+        val transaction = supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_layout, fragment)
-            .commit()
+
+        if (addToBackStack && fragment !is Homefra) {
+            transaction.addToBackStack(null)
+        }
+
+        transaction.commit()
     }
 
     override fun onBackPressed() {
         if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START)
         } else {
-            super.onBackPressed()
+            val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_layout)
+            // If the current fragment is not Homefra and there are fragments in the back stack
+            if (currentFragment !is Homefra && supportFragmentManager.backStackEntryCount > 0) {
+                // Navigate back to Homefra by popping all fragments up to and including Homefra
+                supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                replaceFragment(Homefra(), false) // Ensure Homefra is the current fragment and not added to stack
+            } else {
+                // If on Homefra or back stack is empty, allow default back press (exit app)
+                super.onBackPressed()
+            }
+        }
+    }
+    private fun updateToolbarForFragment() {
+        val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_layout)
+        if (currentFragment is Homefra) {
+            supportActionBar?.setDisplayHomeAsUpEnabled(false)
+            toggle.isDrawerIndicatorEnabled = true
+            toggle.syncState()
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
+        } else {
+            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            toggle.isDrawerIndicatorEnabled = false
+            toggle.syncState()
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
         }
     }
 }

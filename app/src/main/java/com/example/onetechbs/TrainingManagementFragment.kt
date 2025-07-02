@@ -36,6 +36,16 @@ class TrainingManagementFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         Log.d("TrainingFragment", "onViewCreated called")
 
+        // back navigation for toolbar
+        view.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener {
+            try {
+                val navController = androidx.navigation.Navigation.findNavController(view)
+                navController.popBackStack(R.id.homefraFragment, false)
+            } catch (e: Exception) {
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
+        }
+
         try {
             setupRecyclerView()
             viewLifecycleOwner.lifecycleScope.launch {

@@ -44,53 +44,89 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="end"
-            android:orientation="horizontal">
+            android:gravity="start"
+            android:orientation="horizontal"
+            android:weightSum="5">
 
+            <!-- Primary action: View Details -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnViewDetails"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:textColor="#1E88E5"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="View details"
+                android:textAllCaps="false"
+                app:icon="@drawable/baseline_list_alt_24"
+                app:iconGravity="textStart"
+                app:iconPadding="4dp" />
+
+            <!-- Applicants list -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnApplicants"
+                android:layout_weight="1"
+                android:minWidth="0dp"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="62dp"
-                android:layout_height="match_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
+                android:contentDescription="Applicants"
                 android:textAllCaps="false"
-                app:icon="@drawable/baseline_people_24" />
+                app:icon="@drawable/baseline_people_24"
+                app:iconGravity="textStart"
+                app:iconPadding="4dp" />
 
+            <!-- Edit -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUpdate"
+                android:layout_weight="1"
+                android:minWidth="0dp"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="55dp"
-                android:layout_height="66dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
+                android:contentDescription="Edit"
                 android:textAllCaps="false"
-                app:icon="@drawable/baseline_edit_24" />
+                app:icon="@drawable/baseline_edit_24"
+                app:iconGravity="textStart"
+                app:iconPadding="4dp" />
 
+            <!-- Finish -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnFinish"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:backgroundTint="#4CAF50"
+                android:textColor="@color/white"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="39dp"
-                android:layout_height="match_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:text="Finish"
+                android:contentDescription="Mark as finished"
                 android:textAllCaps="false"
-                app:icon="@drawable/baseline_check_circle_24" />
+                app:icon="@drawable/baseline_check_circle_24"
+                app:iconGravity="textStart"
+                app:iconPadding="4dp" />
 
+            <!-- Delete -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDelete"
+                android:layout_weight="1"
+                android:minWidth="0dp"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="66dp"
-                android:layout_height="67dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="Delete"
                 android:textAllCaps="false"
                 android:textColor="#D32F2F"
                 app:icon="@drawable/baseline_delete_24"
                 app:iconTint="#D32F2F"
-                app:strokeColor="#D32F2F" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnViewDetails"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="View Details" />
+                app:strokeColor="#D32F2F"
+                app:iconGravity="textStart"
+                app:iconPadding="4dp" />
 
         </LinearLayout>
     </LinearLayout>

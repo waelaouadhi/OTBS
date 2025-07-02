@@ -7,7 +7,8 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="4dp">
+    app:cardElevation="4dp"
+    android:fitsSystemWindows="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -19,35 +20,35 @@
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/CircleImageView"
+            android:src="@drawable/doctor2"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:src="@drawable/doctor2"/>
+            app:shapeAppearanceOverlay="@style/CircleImageView" />
 
         <TextView
             android:id="@+id/doctorNameTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
+            android:textColor="@android:color/black"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@android:color/black"
-            app:layout_constraintStart_toEndOf="@id/doctorImageView"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/doctorImageView"
             app:layout_constraintTop_toTopOf="@id/doctorImageView"
-            tools:text="Dr. John Doe"/>
+            tools:text="Dr. John Doe" />
 
         <TextView
             android:id="@+id/specialtyTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textSize="14sp"
             android:textColor="@android:color/darker_gray"
-            app:layout_constraintStart_toStartOf="@id/doctorNameTextView"
+            android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/doctorNameTextView"
             app:layout_constraintTop_toBottomOf="@id/doctorNameTextView"
-            tools:text="Cardiologist"/>
+            tools:text="Cardiologist" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/availabilityChip"
@@ -56,7 +57,7 @@
             android:layout_marginTop="8dp"
             app:layout_constraintStart_toStartOf="@id/doctorNameTextView"
             app:layout_constraintTop_toBottomOf="@id/specialtyTextView"
-            tools:text="Available"/>
+            tools:text="Available" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/scheduleButton"
@@ -65,11 +66,11 @@
             android:layout_marginTop="12dp"
             android:text="Schedule Visit"
             android:textAllCaps="false"
-            app:cornerRadius="8dp"
             app:backgroundTint="#FD5B00"
-            app:layout_constraintStart_toStartOf="@id/doctorNameTextView"
+            app:cornerRadius="8dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/availabilityChip"/>
+            app:layout_constraintStart_toStartOf="@id/doctorNameTextView"
+            app:layout_constraintTop_toBottomOf="@id/availabilityChip" />
 
         <TextView
             android:id="@+id/selectedTimeTextView"
@@ -84,15 +85,16 @@
             app:layout_constraintTop_toBottomOf="@id/scheduleButton"
             tools:text="Selected time: 14:30"
             tools:visibility="visible" />
+
         <Spinner
             android:id="@+id/timeSlotSpinner"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@id/scheduleButton"
-            app:layout_constraintStart_toStartOf="@id/scheduleButton"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/scheduleButton"
+            app:layout_constraintTop_toBottomOf="@id/scheduleButton"
             tools:visibility="visible" />
 
         <com.google.android.material.button.MaterialButton
@@ -102,13 +104,13 @@
             android:layout_marginTop="8dp"
             android:text="Confirm Appointment"
             android:textAllCaps="false"
-            app:cornerRadius="8dp"
-            app:backgroundTint="#4CAF50"
             android:visibility="gone"
-            app:layout_constraintStart_toStartOf="@id/scheduleButton"
+            app:backgroundTint="#4CAF50"
+            app:cornerRadius="8dp"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/scheduleButton"
             app:layout_constraintTop_toBottomOf="@id/selectedTimeTextView"
-            tools:visibility="visible"/>
+            tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView> 

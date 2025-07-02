@@ -24,6 +24,7 @@ class TrainingManagementAdapter(
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_training_management, parent, false)
         return TrainingViewHolder(view)
+
     }
 
     override fun onBindViewHolder(holder: TrainingViewHolder, position: Int) {
@@ -39,7 +40,7 @@ class TrainingManagementAdapter(
         private val participantsCountTextView: TextView = itemView.findViewById(R.id.participantsCountTextView)
         private val acceptedCountTextView: TextView = itemView.findViewById(R.id.acceptedCountTextView)
         private val participantsRecyclerView: RecyclerView = itemView.findViewById(R.id.participantsRecyclerView)
-        private val viewDetailsButton: MaterialButton = itemView.findViewById(R.id.viewDetailsButton)
+
         private val deleteTrainingButton: MaterialButton = itemView.findViewById(R.id.deleteTrainingButton)
 
         @SuppressLint("SetTextI18n")
@@ -66,9 +67,7 @@ class TrainingManagementAdapter(
 
             setupParticipantsList(training)
 
-            viewDetailsButton.setOnClickListener {
-                onViewDetailsClick(training.id)
-            }
+
 
             deleteTrainingButton.setOnClickListener {
                 onDeleteClick(training.id)

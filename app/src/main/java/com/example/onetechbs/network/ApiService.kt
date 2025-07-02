@@ -163,8 +163,9 @@ interface ApiService {
 
     @PUT("api/v1/job-offers/{id}/status")
     fun toggleJobOfferStatus(
-        @Path("id") id: String,
-        @Query("status") status: String
+        @Path("id") jobId: String,
+        @Query("status") status: String,
+        @Header("Authorization") token: String
     ): Call<Void>
 
     @DELETE("api/v1/job-offers/{id}")

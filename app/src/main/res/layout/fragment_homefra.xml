@@ -4,13 +4,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Homefra">
+    tools:context=".Homefra"
+    android:fitsSystemWindows="true">
 
+
+
+
+    <!-- FrameLayout containing RadioGroup -->
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/profileSection"
-        android:layout_width="417dp"
-        android:layout_height="273dp"
+        android:layout_width="419dp"
+        android:layout_height="309dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="20dp"
         android:padding="16dp"
@@ -45,22 +50,20 @@
             app:layout_constraintBottom_toTopOf="@+id/bgImage"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0" />
+            app:layout_constraintVertical_bias="1.0" />
 
         <LinearLayout
             android:id="@+id/linearLayout"
             android:layout_width="171dp"
             android:layout_height="70dp"
-            android:layout_marginBottom="36dp"
+            android:layout_marginBottom="4dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:orientation="vertical"
             android:paddingStart="8dp"
             app:layout_constraintBottom_toTopOf="@+id/bgImage"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.406"
-            app:layout_constraintStart_toEndOf="@+id/profileImg"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0">
+            app:layout_constraintHorizontal_bias="0.39"
+            app:layout_constraintStart_toEndOf="@+id/profileImg">
 
             <TextView
                 android:id="@+id/firstNameTextView"
@@ -143,8 +146,6 @@
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <!-- FrameLayout containing RadioGroup -->
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/statsContainer"

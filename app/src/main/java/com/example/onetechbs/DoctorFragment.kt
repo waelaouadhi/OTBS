@@ -23,6 +23,7 @@ import java.util.*
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textview.MaterialTextView
+import com.google.android.material.appbar.MaterialToolbar
 
 class DoctorFragment : Fragment() {
 
@@ -52,6 +53,11 @@ class DoctorFragment : Fragment() {
         editStartTime = view.findViewById(R.id.editStartTime)
         editEndTime = view.findViewById(R.id.editEndTime)
         submitbtn = view.findViewById(R.id.submitbtn)
+
+        // toolbar back navigation
+        view.findViewById<MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
         selectedDateTextView = view.findViewById(R.id.selectedDateValue)
         doctorVisitText = view.findViewById(R.id.doctorVisitText)
         progressBar = view.findViewById(R.id.progressBar)

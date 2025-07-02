@@ -12,7 +12,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -20,9 +19,7 @@ import com.example.onetechbs.db.CandidateResponseDTO
 import com.example.onetechbs.db.JobOfferResponseDTO
 import com.example.onetechbs.network.RetrofitClient
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.google.android.material.appbar.MaterialToolbar
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -56,7 +53,11 @@ class AvailableJobsFragment : Fragment() {
         rootView?.let { view ->
             recyclerView = view.findViewById(R.id.jobsRecyclerView)
             swipeRefreshLayout = view.findViewById(R.id.swipeRefresh)
-            emptyView = view.findViewById(R.id.emptyView)
+                        emptyView = view.findViewById(R.id.emptyView)
+            val toolbar: MaterialToolbar = view.findViewById(R.id.toolbar)
+            toolbar.setNavigationOnClickListener {
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
         }
     }
 
@@ -151,26 +152,38 @@ class AvailableJobsFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun finishJob(jobId: String) {
+        val token = SharedPreferencesManager.getInstance(requireContext()).getAuthToken()
+
+        if (token.isNullOrEmpty()) {
+            showSessionExpiredDialog()
+            return
+        }
+
         showLoading(true)
-        RetrofitClient.recruitingService.toggleJobOfferStatus(jobId, "FINISHED")
-            .enqueue(object : Callback<Void> {
-                override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                    showLoading(false)
-                    if (response.isSuccessful) {
-                        showSuccess(getString(R.string.job_finished_success))
-                        loadJobs()
-                    } else {
-                        handleApiError(response.code())
-                    }
-                }
 
-                override fun onFailure(call: Call<Void>, t: Throwable) {
-                    showLoading(false)
-                    handleNetworkError(t)
+        RetrofitClient.recruitingService.toggleJobOfferStatus(
+            jobId = jobId,
+            status = "CLOSED", // must be one of: OPEN, CLOSED, CONVERTED_TO_EXTERNAL, CONVERTED_TO_INTERNAL
+            token = "Bearer $token"
+        ).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                showLoading(false)
+                if (response.isSuccessful) {
+                    showSuccess(getString(R.string.job_finished_success))
+                    loadJobs()
+                } else if (response.code() == 401) {
+                    showSessionExpiredDialog()
+                } else {
+                    handleApiError(response.code())
                 }
-            })
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                showLoading(false)
+                handleNetworkError(t)
+            }
+        })
     }
-
     @RequiresApi(Build.VERSION_CODES.O)
     private fun handleDeleteJob(job: JobOfferResponseDTO) {
         MaterialAlertDialogBuilder(requireContext())
@@ -224,7 +237,7 @@ class AvailableJobsFragment : Fragment() {
         val authHeader = "Bearer $token"
         showLoading(true)
 
-        RetrofitClient.apiService.listCandidates(authHeader).enqueue(object : Callback<List<CandidateResponseDTO>> {
+        RetrofitClient.candidateService.listCandidates(authHeader).enqueue(object : Callback<List<CandidateResponseDTO>> {
             override fun onResponse(
                 call: Call<List<CandidateResponseDTO>>,
                 response: Response<List<CandidateResponseDTO>>

@@ -118,6 +118,16 @@ class TrainingListFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        // Back arrow navigates to homefraFragment
+        val toolbar = view.findViewById<com.google.android.material.appbar.MaterialToolbar?>(R.id.toolbar)
+        toolbar?.setNavigationOnClickListener {
+            try {
+                val navController = androidx.navigation.Navigation.findNavController(view)
+                navController.popBackStack(R.id.homefraFragment, false)
+            } catch (e: Exception) {
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
+        }
         super.onViewCreated(view, savedInstanceState)
 
         setupFilterChips()

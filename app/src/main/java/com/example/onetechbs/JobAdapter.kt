@@ -43,10 +43,23 @@ class JobAdapter(
             titleText.text = "${job.title} - ${job.department}"
             descriptionText.text = job.description
 
-            // Show/hide buttons based on HR role
+            // Determine if job is finished
+            val isFinished = job.status.equals("FINISHED", ignoreCase = true)
+
+            // Apply view states
+            if (isFinished) {
+                // Dim text to indicate completion
+                titleText.alpha = 0.4f
+                descriptionText.alpha = 0.4f
+            } else {
+                titleText.alpha = 1f
+                descriptionText.alpha = 1f
+            }
+
+            // Show/hide buttons considering HR role and finished state
             btnApplicants.visibility = if (isHR) View.VISIBLE else View.GONE
-            btnUpdate.visibility = if (isHR) View.VISIBLE else View.GONE
-            btnFinish.visibility = if (isHR) View.VISIBLE else View.GONE
+            btnUpdate.visibility = if (isHR && !isFinished) View.VISIBLE else View.GONE
+            btnFinish.visibility = if (isHR && !isFinished) View.VISIBLE else View.GONE
             btnDelete.visibility = if (isHR) View.VISIBLE else View.GONE
             btnViewDetails.visibility = if (!isHR) View.VISIBLE else View.GONE
 

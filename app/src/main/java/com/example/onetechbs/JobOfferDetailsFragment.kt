@@ -23,6 +23,7 @@ import com.example.onetechbs.network.ResumeService
 import com.example.onetechbs.network.RetrofitClient
 import com.example.onetechbs.util.SharedPreferencesManager
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -71,6 +72,11 @@ class JobOfferDetailsFragment : Fragment() {
         view.findViewById<TextView>(R.id.tvJobTitle).text = jobOffer.title
         view.findViewById<TextView>(R.id.tvJobDepartment).text = jobOffer.department
         view.findViewById<TextView>(R.id.tvJobDescription).text = jobOffer.description
+
+                        val toolbar: MaterialToolbar = view.findViewById(R.id.toolbar)
+        toolbar.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
 
         val btnUploadResume: MaterialButton = view.findViewById(R.id.btnUploadResume)
         val btnApply: MaterialButton = view.findViewById(R.id.btnApply)

@@ -69,6 +69,7 @@ class Homefra : Fragment() {
         // Handle the button click for submitting leave
         binding.buttonsub.setOnClickListener {
             val addLeaveFragment = AddLeaveFragment()
+            binding.buttonsub.visibility = View.GONE // Hide the button after clicking
 
             // Set the listener for the AddLeaveFragment
             addLeaveFragment.setOnLeaveSubmittedListener { category, startDate, endDate ->
@@ -81,9 +82,12 @@ class Homefra : Fragment() {
                 .replace(R.id.frameLayoutContainer, addLeaveFragment)
                 .addToBackStack(null)
                 .commit()
+
+
         }
 
         return binding.root
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

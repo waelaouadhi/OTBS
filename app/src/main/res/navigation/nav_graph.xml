@@ -70,4 +70,18 @@
         android:name="com.example.onetechbs.TrainingFragment"
         android:label="Training"
         tools:layout="@layout/fragment_training" />
+    <fragment
+        android:id="@+id/doctorListFragment"
+        android:name="com.example.onetechbs.DoctorListFragment"
+        android:label="Doctors"
+        tools:layout="@layout/fragment_doctor_list" >
+        <action
+            android:id="@+id/action_doctorListFragment_to_homefraFragment"
+            app:destination="@id/homefraFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/homefraFragment"
+        android:name="com.example.onetechbs.Homefra"
+        android:label="Home"
+        tools:layout="@layout/fragment_homefra"/>
 </navigation>
