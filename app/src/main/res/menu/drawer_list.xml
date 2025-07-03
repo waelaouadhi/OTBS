@@ -3,11 +3,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
+    <!-- Home remains uncheckable so no drawer item appears selected when on Home -->
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/outline_home_24"
+        android:title="Home"
+        android:checkable="false" />
+
+    <!-- All other items are mutually exclusive (single choice) -->
     <group android:checkableBehavior="single">
-        <item
-            android:id="@+id/nav_home"
-            android:icon="@drawable/outline_home_24"
-            android:title="Home" />
+
         <item
             android:id="@+id/nav_profile"
             android:icon="@drawable/baseline_accessibility_new_24"
@@ -39,11 +44,6 @@
             android:id="@+id/nav_internal_recruiting"
             android:icon="@drawable/baseline_work_outline_24"
             android:title="Internal Recruiting"
-            />
-        <item
-            android:id="@+id/nav_review_applications"
-            android:icon="@drawable/baseline_list_alt_24"
-            android:title="Review Applications"
             />
 
         <!-- Employee + Manager -->

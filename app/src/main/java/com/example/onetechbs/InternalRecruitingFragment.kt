@@ -40,6 +40,16 @@ class InternalRecruitingFragment : Fragment() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.departmentSpinner.adapter = adapter
 
+        // Back navigation via toolbar
+        binding.toolbar.setNavigationOnClickListener {
+            try {
+                androidx.navigation.Navigation.findNavController(view)
+                    .popBackStack(R.id.homefraFragment, false)
+            } catch (e: Exception) {
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
+        }
+
         binding.saveButton.setOnClickListener {
             if (validateInputs()) {
                 val jobOfferRequest = JobOfferRequest(

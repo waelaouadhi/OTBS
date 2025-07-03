@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.google.android.material.appbar.MaterialToolbar
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
@@ -47,6 +48,17 @@ class HRLeaveManagementFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         Log.d(TAG, "Fragment view created")
+        // Setup toolbar back navigation
+        binding.toolbar.setNavigationIcon(R.drawable.ic_arrow_back)
+        binding.toolbar.setNavigationOnClickListener {
+            try {
+                androidx.navigation.Navigation.findNavController(view)
+                    .popBackStack(R.id.homefraFragment, false)
+            } catch (e: Exception) {
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
+        }
+
         setupRecyclerView()
         setupSwipeRefresh()
         setupFilterRadioGroup()

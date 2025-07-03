@@ -159,18 +159,57 @@ class DoctorListFragment : Fragment() {
         }
     }
 
+    private fun isFutureOrToday(dateStr: String): Boolean {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val currentDate = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.time
+        
+        return try {
+            val visitDate = dateFormat.parse(dateStr)
+            !visitDate.before(currentDate) // true if visitDate is today or in the future
+        } catch (e: Exception) {
+            false // If there's an error parsing the date, don't show the doctor
+        }
+    }
+
     private fun filterDoctors() {
         val filteredList = allDoctors.filter { doctor ->
+            val isFutureOrToday = isFutureOrToday(doctor.visitDate)
             val matchesSearch = currentQuery.isEmpty() || doctor.doctorName.contains(currentQuery, ignoreCase = true)
             val matchesFilter = selectedFilters.isEmpty() || selectedFilters.contains(doctor.doctorName)
-            matchesSearch && matchesFilter
+            isFutureOrToday && matchesSearch && matchesFilter
         }
+        
+        // Show a message if all doctors are filtered out due to date
+        if (filteredList.isEmpty() && allDoctors.isNotEmpty()) {
+            binding.emptyStateTextView.visibility = View.VISIBLE
+            binding.emptyStateTextView.text = "No upcoming doctor visits available. Please check back later."
+        }
+        
         doctorVisitAdapter.submitList(filteredList)
         showEmptyState(filteredList.isEmpty())
     }
 
     private fun showEmptyState(show: Boolean) {
-        binding.recyclerView.visibility = if (show) View.GONE else View.VISIBLE
+        if (show) {
+            binding.recyclerView.visibility = View.GONE
+            if (allDoctors.isEmpty()) {
+                // Show empty state message when there are no doctors at all
+                binding.emptyStateTextView.visibility = View.VISIBLE
+                binding.emptyStateTextView.text = "No doctors available at the moment. Please check back later."
+            } else {
+                // Show message when there are doctors but none match the current filter
+                binding.emptyStateTextView.visibility = View.VISIBLE
+                binding.emptyStateTextView.text = "No doctors match your search criteria."
+            }
+        } else {
+            binding.recyclerView.visibility = View.VISIBLE
+            binding.emptyStateTextView.visibility = View.GONE
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

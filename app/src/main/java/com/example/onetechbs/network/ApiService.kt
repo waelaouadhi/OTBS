@@ -87,8 +87,13 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Call<MessageResponse>
 
-    @GET("api/v1/leave/history")
-    fun getLeaveHistory(): Call<List<LeaveHistoryResponse>>
+    @GET("/api/v1/leave/history")
+    suspend fun getLeaveHistory(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10,
+        @Query("sort") sort: String = "startDate,asc"
+    ): Response<List<Leave>>
 
     // ─────────────────────────────────────────────────────────────
     // 🏋️‍♂️ TRAININGS

@@ -69,6 +69,7 @@ class LeaveRequestsAdapter(
         private val status: TextView = itemView.findViewById(R.id.status)
         private val btnApprove: MaterialButton = itemView.findViewById(R.id.btnApprove)
         private val btnReject: MaterialButton = itemView.findViewById(R.id.btnReject)
+        private val userRole: String? = com.example.onetechbs.util.SharedPreferencesManager.getInstance(itemView.context).getUserRole()
         private val btnDownloadAttachment: MaterialButton = itemView.findViewById(R.id.btnDownloadAttachment)
 
         @RequiresApi(Build.VERSION_CODES.O)
@@ -89,6 +90,11 @@ class LeaveRequestsAdapter(
 
             // Handle null status
             status.text = leave.status?.name ?: "EN_ATTENTE"
+
+            // Show/Hide action buttons based on user role
+            val isEmployee = userRole?.uppercase()?.contains("EMPLOYEE") == true
+            btnApprove.isVisible = !isEmployee
+            btnReject.isVisible = !isEmployee
 
             // Color mapping for French status values
             val statusColor = when (leave.status) {

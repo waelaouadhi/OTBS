@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:fontFamily="@font/kode_mono"
-            android:textColor="#1E88E5"
+            android:textColor="#BF360C"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -49,84 +49,58 @@
             android:weightSum="5">
 
             <!-- Primary action: View Details -->
-            <com.google.android.material.button.MaterialButton
+            <ImageButton
                 android:id="@+id/btnViewDetails"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                android:textColor="#1E88E5"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:contentDescription="View details"
-                android:textAllCaps="false"
-                app:icon="@drawable/baseline_list_alt_24"
-                app:iconGravity="textStart"
-                app:iconPadding="4dp" />
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/icb_details"
+                android:contentDescription="View details" />
 
             <!-- Applicants list -->
-            <com.google.android.material.button.MaterialButton
+            <ImageButton
                 android:id="@+id/btnApplicants"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:contentDescription="Applicants"
-                android:textAllCaps="false"
-                app:icon="@drawable/baseline_people_24"
-                app:iconGravity="textStart"
-                app:iconPadding="4dp" />
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/icb_application"
+                android:contentDescription="Applicants" />
 
             <!-- Edit -->
-            <com.google.android.material.button.MaterialButton
+            <ImageButton
                 android:id="@+id/btnUpdate"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:contentDescription="Edit"
-                android:textAllCaps="false"
-                app:icon="@drawable/baseline_edit_24"
-                app:iconGravity="textStart"
-                app:iconPadding="4dp" />
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/icb_edit"
+                android:contentDescription="Edit" />
 
             <!-- Finish -->
-            <com.google.android.material.button.MaterialButton
+            <ImageButton
                 android:id="@+id/btnFinish"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                android:backgroundTint="#4CAF50"
-                android:textColor="@color/white"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:contentDescription="Mark as finished"
-                android:textAllCaps="false"
-                app:icon="@drawable/baseline_check_circle_24"
-                app:iconGravity="textStart"
-                app:iconPadding="4dp" />
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/icb_finish"
+                android:contentDescription="Mark as finished" />
 
             <!-- Delete -->
-            <com.google.android.material.button.MaterialButton
+            <ImageButton
                 android:id="@+id/btnDelete"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:contentDescription="Delete"
-                android:textAllCaps="false"
-                android:textColor="#D32F2F"
-                app:icon="@drawable/baseline_delete_24"
-                app:iconTint="#D32F2F"
-                app:strokeColor="#D32F2F"
-                app:iconGravity="textStart"
-                app:iconPadding="4dp" />
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/icb_delet"
+                android:contentDescription="Delete" />
 
         </LinearLayout>
     </LinearLayout>

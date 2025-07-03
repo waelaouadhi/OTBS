@@ -24,14 +24,14 @@ import java.util.concurrent.TimeUnit
 @RequiresApi(Build.VERSION_CODES.O)
 object RetrofitClient {
 
-    private const val AUTH_BASE_URL = "http://192.168.1.25:8081/"
-    private const val EMPLOYEE_BASE_URL = "http://192.168.1.25:8082/"
-    private const val LEAVE_BASE_URL = "http://192.168.1.25:8083/"
-    private const val TRAINING_BASE_URL = "http://192.168.1.25:8087/"
-    private const val NOTIFICATION_BASE_URL = "http://192.168.1.25:8086/"
-    private const val MED_BASE_URL = "http://192.168.1.25:8085/"
-    private const val RECRUITING_BASE_URL = "http://192.168.1.25:8088/"
-    private const val CONDIDATE_BASE_URL = "http://192.168.1.25:8089/"
+    private const val AUTH_BASE_URL = "http://172.31.4.154:8081/"
+    private const val EMPLOYEE_BASE_URL = "http://172.31.4.154:8082/"
+    private const val LEAVE_BASE_URL = "http://172.31.4.154:8083/"
+    private const val TRAINING_BASE_URL = "http://172.31.4.154:8087/"
+    private const val NOTIFICATION_BASE_URL = "http://172.31.4.154:8086/"
+    private const val MED_BASE_URL = "http://172.31.4.154:8085/"
+    private const val RECRUITING_BASE_URL = "http://172.31.4.154:8088/"
+    private const val CONDIDATE_BASE_URL = "http://172.31.4.154:8089/"
 
 
     private const val CONNECT_TIMEOUT = 30L

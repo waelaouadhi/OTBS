@@ -1,21 +1,25 @@
 package com.example.onetechbs
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.onetechbs.databinding.FragmentLeaveListBinding
 import com.example.onetechbs.db.LeaveResponse
+import com.example.onetechbs.db.LeaveStatus
+import com.example.onetechbs.db.EStatus
 import com.example.onetechbs.network.RetrofitClient
-import com.example.onetechbs.util.SharedPreferencesManager
-import retrofit2.Call
-import retrofit2.Callback
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import retrofit2.Response
-import com.google.gson.Gson
 
 class LeaveListFragment : Fragment() {
 
@@ -34,6 +38,7 @@ class LeaveListFragment : Fragment() {
         return binding.root
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
@@ -48,63 +53,59 @@ class LeaveListFragment : Fragment() {
             adapter = leaveListAdapter
         }
     }
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             fetchLeaves()
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun fetchLeaves() {
         val token = RetrofitClient.getAuthToken()
-        val employeeId = getEmployeeId()
-
         if (token.isNullOrEmpty()) {
             showError("Unauthorized: Please login again.")
             return
         }
 
-        if (employeeId == null) {
-            showError("Error: Employee ID not found")
-            return
-        }
-
-        showLoading(true)
-        RetrofitClient.leaveService.getEmployeeLeaves(employeeId).enqueue(object : Callback<List<LeaveResponse>> {
-            override fun onResponse(call: Call<List<LeaveResponse>>, response: Response<List<LeaveResponse>>) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            showLoading(true)
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.leaveService.getLeaveHistory("Bearer $token")
+                }
                 showLoading(false)
                 if (response.isSuccessful) {
                     val leaves = response.body() ?: emptyList()
+                    // Convert API Leave model to UI LeaveResponse model expected by adapter
+                    val converted = leaves.map { leave ->
+                        LeaveResponse(
+                            id = leave.id ?: 0L,
+                            name = leave.userDn.substringBefore(","),
+                            department = "",
+                            startDate = leave.startDate,
+                            endDate = leave.endDate,
+                            leaveType = leave.leaveType,
+                            status = when (leave.status) {
+                                EStatus.APPROUVÉE -> LeaveStatus.APPROVED
+                                EStatus.REFUSÉE -> LeaveStatus.REJECTED
+                                else -> LeaveStatus.PENDING
+                            }
+                        )
+                    }
                     leaveList.clear()
-                    leaveList.addAll(leaves)
-                    leaveListAdapter.notifyDataSetChanged()
+                    leaveList.addAll(converted)
+                    leaveListAdapter.submitList(converted.toList())
                     updateUI()
                 } else {
-                    handleError(response)
+                    showError("Error: ${response.code()}")
                 }
-            }
-
-            override fun onFailure(call: Call<List<LeaveResponse>>, t: Throwable) {
+            } catch (e: Exception) {
                 showLoading(false)
-                showError("Network error: ${t.message}")
-                Log.e("LeaveListFragment", "Error: ${t.message}", t)
+                showError("Network error: ${e.message}")
+                Log.e("LeaveListFragment", "Error", e)
             }
-        })
-    }
-
-    private fun getEmployeeId(): String? {
-        return SharedPreferencesManager.getCurrentUserId(requireContext())
-
-    }
-
-    private fun handleError(response: Response<List<LeaveResponse>>) {
-        val errorBody = response.errorBody()?.string()
-        val errorMessage = try {
-            val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
-            errorResponse.message ?: "Unknown error occurred"
-        } catch (e: Exception) {
-            "Error: ${response.code()}"
         }
-        showError(errorMessage)
     }
 
     private fun updateUI() {
@@ -130,8 +131,4 @@ class LeaveListFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
-
-    data class ErrorResponse(
-        val message: String? = null
-    )
 }

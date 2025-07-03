@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.onetechbs.HRLeaveManagementFragment.Companion
 import com.example.onetechbs.adapter.DoctorManagementAdapter
 import com.example.onetechbs.databinding.FragmentDoctorManagementBinding
+import com.example.onetechbs.db.MedicalVisitResponse
+import com.example.onetechbs.DoctorFragment
 import com.example.onetechbs.db.MessageResponse
 import com.example.onetechbs.network.RetrofitClient
 import com.example.onetechbs.util.SharedPreferencesManager
@@ -28,6 +30,7 @@ class DoctorManagementFragment : Fragment() {
     private var _binding: FragmentDoctorManagementBinding? = null
     private val binding get() = _binding!!
     private lateinit var adapter: DoctorManagementAdapter
+private var allVisits: List<MedicalVisitResponse> = emptyList()
     private val TAG = "DoctorManagementFrag"
 
     override fun onCreateView(
@@ -46,6 +49,25 @@ class DoctorManagementFragment : Fragment() {
         setupSwipeRefresh()
         initializeToken()
         loadVisits()
+
+        // --- Search Bar Logic ---
+        binding.searchEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s?.toString()?.trim() ?: ""
+                filterVisits(query)
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        // --- FAB Navigation ---
+        binding.fabAddDoctor.setOnClickListener {
+            navigateToAddDoctor()
+        }
+        // Also handle the empty state addDoctorButton
+        binding.addDoctorButton?.setOnClickListener {
+            navigateToAddDoctor()
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -74,8 +96,13 @@ class DoctorManagementFragment : Fragment() {
     }
 
     private fun updateEmptyState(isEmpty: Boolean) {
-        binding.emptyView.visibility = if (isEmpty) View.VISIBLE else View.GONE
         binding.recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+        binding.emptyTitleTextView.visibility = if (isEmpty) View.VISIBLE else View.GONE
+        binding.emptySubtitleTextView.visibility = if (isEmpty) View.VISIBLE else View.GONE
+        // Only set this if the addDoctorButton exists in your layout
+        try {
+            binding.addDoctorButton?.visibility = if (isEmpty) View.VISIBLE else View.GONE
+        } catch (_: Exception) {}
     }
 
     private fun handleUnauthorized() {
@@ -104,6 +131,7 @@ class DoctorManagementFragment : Fragment() {
 
                 val response = RetrofitClient.medService.getMedicalVisits("Bearer $authToken")
 
+                allVisits = response
                 adapter.submitList(response)
                 updateEmptyState(response.isEmpty())
             } catch (e: HttpException) {
@@ -156,5 +184,26 @@ class DoctorManagementFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    // --- Filtering Logic for Search Bar ---
+    private fun filterVisits(query: String) {
+        val filtered = if (query.isEmpty()) {
+            allVisits
+        } else {
+            allVisits.filter { it.doctorName.contains(query, ignoreCase = true) }
+        }
+        adapter.submitList(filtered)
+        updateEmptyState(filtered.isEmpty())
+    }
+
+    // --- Navigation to Add Doctor Fragment ---
+    private fun navigateToAddDoctor() {
+        // Use FragmentManager to navigate to DoctorFragment
+        val fragment = DoctorFragment()
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_layout, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 }

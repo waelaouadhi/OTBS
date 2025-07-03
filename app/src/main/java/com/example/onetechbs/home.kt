@@ -82,10 +82,7 @@ class home : AppCompatActivity() {
                     else showAccessDenied()
                 }
 
-                R.id.nav_review_applications -> {
-                    if (isHR()) replaceFragment(ReviewApplicationsFragment())
-                    else showAccessDenied()
-                }
+
 
                 R.id.nav_doctor_management -> {
                     if (isHR()) replaceFragment(DoctorManagementFragment())
@@ -114,7 +111,7 @@ class home : AppCompatActivity() {
 
         // Default: hide all role-specific items
         navMenu.findItem(R.id.nav_internal_recruiting)?.isVisible = false
-        navMenu.findItem(R.id.nav_review_applications)?.isVisible = false
+
         navMenu.findItem(R.id.nav_doctor_management)?.isVisible = false
         navMenu.findItem(R.id.nav_training_management)?.isVisible = false
         navMenu.findItem(R.id.nav_leaves_management)?.isVisible = false
@@ -126,7 +123,7 @@ class home : AppCompatActivity() {
         // Show items based on role
         if (role == "HR") {
             navMenu.findItem(R.id.nav_internal_recruiting)?.isVisible = true
-            navMenu.findItem(R.id.nav_review_applications)?.isVisible = true
+
             navMenu.findItem(R.id.nav_doctor_management)?.isVisible = true
         } else if (role == "Manager") {
             navMenu.findItem(R.id.nav_training_management)?.isVisible = true

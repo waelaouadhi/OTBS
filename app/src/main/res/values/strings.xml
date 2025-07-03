@@ -18,6 +18,11 @@
     <string name="first_fragment_label">First Fragment</string>
     <string name="second_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
+    <string name="doctor_management">Doctor Management</string>
+    <string name="search_doctors">Search doctors…</string>
+    <string name="no_doctors_found">No Doctors Found</string>
+    <string name="no_doctors_available_desc">There are no doctors available at the moment. Add a new doctor to get started.</string>
+    <string name="add_doctor">Add Doctor</string>
     <string name="previous">Previous</string>
     <string name="select_department_prompt">Select a department</string>
     <string name="open_drawer">Open Drawer</string>

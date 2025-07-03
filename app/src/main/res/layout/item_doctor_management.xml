@@ -1,35 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="12dp"
-    android:background="#E9CEBE">
+    android:layout_marginVertical="8dp"
+    android:layout_marginHorizontal="12dp"
+    app:cardElevation="4dp"
+    app:cardCornerRadius="16dp"
+    app:strokeColor="@color/md_theme_primary"
+    app:strokeWidth="1dp">
 
-    <TextView
-        android:id="@+id/doctorName"
-        android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Doctor Name"
-        android:textStyle="bold" />
+        android:padding="16dp">
 
-    <TextView
-        android:id="@+id/visitDate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Visit Date" />
+        <!-- Doctor Avatar/Icon -->
+        <ImageView
+            android:id="@+id/doctorAvatar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/doctor2"
+            android:contentDescription="Doctor Avatar"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:background="@drawable/circle_background"
+            android:padding="4dp" />
 
-    <TextView
-        android:id="@+id/timeRange"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Time Range" />
+        <!-- Doctor Name -->
+        <TextView
+            android:id="@+id/doctorName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Doctor Name"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="@color/md_theme_primary"
+            app:layout_constraintStart_toEndOf="@id/doctorAvatar"
+            app:layout_constraintTop_toTopOf="@id/doctorAvatar"
+            app:layout_constraintEnd_toStartOf="@id/deleteButton"
+            app:layout_constraintHorizontal_bias="0"
+            android:layout_marginStart="12dp" />
 
-    <Button
-        android:id="@+id/deleteButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Delete"
-        android:textColor="@android:color/white"
-        android:background="@color/red" />
-</LinearLayout>
+        <!-- Visit Date -->
+        <TextView
+            android:id="@+id/visitDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Visit Date"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="@id/doctorName"
+            app:layout_constraintTop_toBottomOf="@id/doctorName"
+            app:layout_constraintEnd_toStartOf="@id/deleteButton"
+            android:layout_marginTop="4dp" />
+
+        <!-- Time Range -->
+        <TextView
+            android:id="@+id/timeRange"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Time Range"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="@id/doctorName"
+            app:layout_constraintTop_toBottomOf="@id/visitDate"
+            app:layout_constraintEnd_toStartOf="@id/deleteButton"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Delete Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/deleteButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="Delete"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/red"
+            android:icon="@android:drawable/ic_delete"
+            app:cornerRadius="20dp"
+            app:iconGravity="textStart"
+            app:iconTint="@color/white"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="4dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

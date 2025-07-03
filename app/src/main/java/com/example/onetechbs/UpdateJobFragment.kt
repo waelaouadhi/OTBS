@@ -44,6 +44,7 @@ class UpdateJobFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_update_job, container, false)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -80,15 +81,13 @@ class UpdateJobFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun loadJobDetails() {
-        val jobIdString = arguments?.getString("jobId")
-        val jobId = jobIdString?.toLongOrNull()
-
-        if (jobId == null) {
+        val idLong = jobId.toLongOrNull()
+        if (idLong == null) {
             showError("Invalid or missing Job ID")
             return
         }
 
-        RetrofitClient.recruitingService.getJobOfferById(jobId)
+        RetrofitClient.recruitingService.getJobOfferById(idLong)
             .enqueue(object : Callback<JobOfferRequest> {
                 override fun onResponse(
                     call: Call<JobOfferRequest>,
@@ -165,7 +164,11 @@ class UpdateJobFragment : Fragment() {
             isInternal = true // You might want to make this configurable
         )
 
-        RetrofitClient.recruitingService.updateJobOffer(jobId, updatedJob)
+        val idLong = jobId.toLongOrNull() ?: run {
+            showError("Invalid Job ID")
+            return
+        }
+        RetrofitClient.recruitingService.updateJobOffer(idLong.toString(), updatedJob)
             .enqueue(object : Callback<Void> {
                 override fun onResponse(call: Call<Void>, response: Response<Void>) {
                     if (response.isSuccessful) {
