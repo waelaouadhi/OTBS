@@ -45,6 +45,13 @@ class TrainingFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupUI() {
+        // Set up toolbar
+        val toolbar = binding.root.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
+        toolbar.setNavigationOnClickListener {
+            // Navigate back to home fragment
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
+
         binding.selectDateRangeButton.setOnClickListener {
             showDateRangePicker()
         }

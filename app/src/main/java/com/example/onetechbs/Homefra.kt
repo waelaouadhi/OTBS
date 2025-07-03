@@ -19,6 +19,14 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class Homefra : Fragment() {
+    override fun onResume() {
+        super.onResume()
+        requireActivity().findViewById<androidx.appcompat.widget.Toolbar?>(R.id.toolbar)?.visibility = View.VISIBLE
+    }
+    override fun onPause() {
+        super.onPause()
+        requireActivity().findViewById<androidx.appcompat.widget.Toolbar?>(R.id.toolbar)?.visibility = View.GONE
+    }
 
     private var _binding: FragmentHomefraBinding? = null
     private val binding get() = _binding!!

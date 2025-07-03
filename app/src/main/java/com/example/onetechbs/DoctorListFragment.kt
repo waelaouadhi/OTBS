@@ -62,7 +62,7 @@ class DoctorListFragment : Fragment() {
 
 
         setupRecyclerView()
-        setupSearchView()
+
         setupSwipeRefresh()
         setupFilterChips()
         setupRetryButton()
@@ -135,21 +135,6 @@ class DoctorListFragment : Fragment() {
         }
     }
 
-    private fun setupSearchView() {
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean = false
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                searchJob?.cancel()
-                searchJob = lifecycleScope.launch {
-                    delay(300) // debounce
-                    currentQuery = newText ?: ""
-                    filterDoctors()
-                }
-                return true
-            }
-        })
-    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupSwipeRefresh() {

@@ -33,6 +33,8 @@ class TrainingManagementFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        // Hide home toolbar if present
+        requireActivity().findViewById<androidx.appcompat.widget.Toolbar?>(R.id.toolbar)?.visibility = View.GONE
         super.onViewCreated(view, savedInstanceState)
         Log.d("TrainingFragment", "onViewCreated called")
 

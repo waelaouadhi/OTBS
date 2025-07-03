@@ -84,4 +84,12 @@
     <string name="error_timeout">Request timed out. Please check your connection.</string>
     <string name="error_no_internet">No internet connection available</string>
     <string name="error_network">Network error. Please try again.</string>
+    <!-- Training Fragment Strings -->
+    <string name="add_training">Add Training</string>
+    <string name="department">Department</string>
+    <string name="select_date_range">Select Date Range</string>
+    <string name="submit_training">Submit Training</string>
+    <string name="training_description">Training Description</string>
+    <string name="training_title">Training Title</string>
+    <string name="no_date_range_selected">No date range selected</string>
 </resources>

@@ -41,7 +41,8 @@
                 android:layout_height="?attr/actionBarSize"
                 android:background="?attr/colorPrimary"
                 app:title="Home"
-                app:titleTextColor="@android:color/white" />
+                app:titleTextColor="@android:color/white"
+                android:visibility="visible" />
         </FrameLayout>
 
         <!-- Bottom Navigation View -->

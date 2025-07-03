@@ -21,24 +21,16 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/white"
+            app:titleTextColor="@color/md_theme_primary"
             app:navigationIcon="@drawable/ic_arrow_back"
-            app:title="Doctors" />
+            app:title="Doctors List" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
             app:cardElevation="4dp"
-            app:cardCornerRadius="8dp">
-
-            <androidx.appcompat.widget.SearchView
-                android:id="@+id/searchView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:iconifiedByDefault="false"
-                android:queryHint="Search doctors..."
-                app:queryBackground="@null"/>
-        </com.google.android.material.card.MaterialCardView>
+            app:cardCornerRadius="8dp"/>
 
         <HorizontalScrollView
             android:layout_width="match_parent"

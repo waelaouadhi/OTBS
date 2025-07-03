@@ -53,11 +53,7 @@
             android:title="Available Jobs"
              />
 
-            <item
-                android:id="@+id/nav_training"
-                android:icon="@drawable/ic_training"
-                android:title="Training"
-                tools:ignore="DuplicateIds" />
+
             <item
                 android:id="@+id/nav_training_management"
                 android:icon="@drawable/ic_training_management"
