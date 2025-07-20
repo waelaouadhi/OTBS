@@ -67,6 +67,13 @@ class DoctorVisitAdapter(
             try {
                 val startCal = Calendar.getInstance().apply {
                     time = format.parse(start)!!
+                    // Round up to the next :00 or :30
+                    val minute = get(Calendar.MINUTE)
+                    if (minute % 30 != 0) {
+                        add(Calendar.MINUTE, 30 - (minute % 30))
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
                 }
                 val endCal = Calendar.getInstance().apply {
                     time = format.parse(end)!!

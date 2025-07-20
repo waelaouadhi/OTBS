@@ -112,7 +112,7 @@ class InternalRecruitingFragment : Fragment() {
     private fun submitJobOffer(jobOffer: JobOfferRequest) {
         Log.d("TOKEN", "Current token = ${RetrofitClient.getAuthToken()}")
 
-        val apiService = RetrofitClient.recruitingService
+        val apiService = RetrofitClient.getRecruitingService(requireContext())
 
         apiService.createJobOffer(jobOffer).enqueue(object : Callback<Void> {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {

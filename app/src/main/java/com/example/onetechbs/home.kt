@@ -57,7 +57,11 @@ class home : AppCompatActivity() {
 
         binding.bottomNavigationView.setOnItemSelectedListener {
             when (it.itemId) {
-                R.id.home -> replaceFragment(Homefra())
+                R.id.home -> {
+                    supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                    replaceFragment(Homefra(), false)
+                    updateToolbarForFragment()
+                }
                 R.id.addLeave -> replaceFragment(AddLeaveFragment())
                 R.id.doctor -> replaceFragment(DoctorFragment())
                 R.id.training -> replaceFragment(TrainingFragment())
@@ -70,12 +74,14 @@ class home : AppCompatActivity() {
     private fun setupDrawerNavigation() {
         navigationView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
+                R.id.nav_profile -> replaceFragment(ProfileFragment())
                 R.id.nav_home -> replaceFragment(Homefra())
                 R.id.nav_leaves -> replaceFragment(LeaveListFragment())
                 R.id.nav_doctor -> replaceFragment(DoctorListFragment())
                 R.id.nav_training -> replaceFragment(TrainingListFragment())
                 R.id.nav_notification -> replaceFragment(NotificationFragment())
                 R.id.nav_available_jobs -> replaceFragment(AvailableJobsFragment())
+                R.id.nav_document -> replaceFragment(DocumentFragment())
 
                 R.id.nav_internal_recruiting -> {
                     if (isHR()) replaceFragment(InternalRecruitingFragment())

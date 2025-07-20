@@ -10,6 +10,12 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface ApiService {
+    /**
+     * API Service interface for OneTechBS application.
+     * Provides methods to interact with various endpoints for authentication,
+     * employee management, leave management, training sessions, notifications,
+     * job offers, candidates, and medical visits.
+     */
 
     // ─────────────────────────────────────────────────────────────
     // 🔐 AUTHENTICATION
@@ -23,19 +29,26 @@ interface ApiService {
     // ─────────────────────────────────────────────────────────────
     // 👤 EMPLOYEE
     // ─────────────────────────────────────────────────────────────
-    @GET("api/v1/employee/username")
+    @GET("api/v1/users/username")
     fun getEmployeeByUsername(@Query("username") username: String): Call<EmployeeResponse>
 
-    @GET("api/v1/employee/role")
+    @GET("api/v1/users/role")
     fun getEmployeeRole(@Query("username") username: String): Call<String>
 
     // ─────────────────────────────────────────────────────────────
     // 📅 LEAVE MANAGEMENT
     // ─────────────────────────────────────────────────────────────
     @GET("api/v1/leave/all")
-    suspend fun getAllLeaves(): Response<List<LeaveResponse>>
+    suspend fun getLeavesdd(): Response<List<LeaveResponse>>
 
-    @GET("/api/v1/leave/received")
+
+    @GET("api/v1/leave/all")
+    suspend fun getAllReceivedLeaves(
+        @Header("Authorization") authToken: String
+    ): Response<List<LeaveResponse>>
+
+
+    @GET("api/v1/leave/all")
     suspend fun getLeaves(
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 10,
@@ -87,7 +100,7 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Call<MessageResponse>
 
-    @GET("/api/v1/leave/history")
+    @GET("/api/v1/leave/myLeaves")
     suspend fun getLeaveHistory(
         @Header("Authorization") token: String,
         @Query("page") page: Int = 0,
@@ -154,8 +167,8 @@ interface ApiService {
     @GET("api/v1/job-offers")
     fun getAllJobOffers(): Call<List<JobOfferResponseDTO>>
 
-    @GET("api/v1/job-offers/{id}")
-    fun getJobOfferById(@Path("id") id: Long): Call<JobOfferRequest>
+    @GET("api/v1/job-offers/{jobId}")
+    fun getJobOfferById(@Path("jobId") id: Long): Call<JobOfferRequest>
 
     @POST("api/v1/job-offers")
     fun createJobOffer(@Body request: JobOfferRequest): Call<Void>

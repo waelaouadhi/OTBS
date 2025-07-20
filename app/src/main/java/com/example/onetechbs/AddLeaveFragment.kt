@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -31,8 +32,15 @@ import retrofit2.Response
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import android.os.Parcel
+import android.os.Parcelable
+import androidx.annotation.RequiresApi
+import java.util.Date
 
 class AddLeaveFragment : Fragment() {
+    // Shared preferences keys
+    private val PREFS_NAME = "leave_prefs"
+    private val KEY_TAKEN_RANGES = "taken_ranges"
 
     private lateinit var btnUploadCertificate: MaterialButton
     private lateinit var btnSelectDate: ImageButton
@@ -45,10 +53,8 @@ class AddLeaveFragment : Fragment() {
     private var startDate: String? = null
     private var endDate: String? = null
     private var selectedFile: File? = null
-    private val takenDateRanges = listOf(
-        Pair("2025-05-01", "2025-05-05"),
-        Pair("2025-06-10", "2025-06-15")
-    )
+    private val takenDateRanges: MutableList<Pair<String, String>> by lazy { loadTakenDateRanges() }
+
 
     private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { handleSelectedFile(it) }
@@ -68,17 +74,18 @@ class AddLeaveFragment : Fragment() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("MissingInflatedId")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = inflater.inflate(R.layout.fragment_add_leave, container, false)
 
         btnUploadCertificate = view.findViewById(R.id.btnUploadCertificate)
-        btnSelectDate = view.findViewById(R.id.btnSelectDate)
-        tvSelectedDate = view.findViewById(R.id.tvSelectedDate)
-        leaveCategoryInput = view.findViewById(R.id.spinnerLeaveCategory)
-        btnSubmit = view.findViewById(R.id.submitbtn1)
-        progressBar = view.findViewById(R.id.progressBar)
-        tvSelectedFile = view.findViewById(R.id.tvSelectedFile)
+btnSelectDate = view.findViewById(R.id.btnSelectDate)
+tvSelectedDate = view.findViewById(R.id.tvSelectedDate)
+leaveCategoryInput = view.findViewById(R.id.spinnerLeaveCategory)
+btnSubmit = view.findViewById(R.id.submitbtn1)
+progressBar = view.findViewById(R.id.progressBar)
+tvSelectedFile = view.findViewById(R.id.tvSelectedFile)
 
         // toolbar back navigation
         view.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener {
@@ -86,7 +93,7 @@ class AddLeaveFragment : Fragment() {
         }
 
         btnUploadCertificate.visibility = View.GONE
-        progressBar.visibility = View.GONE
+progressBar.visibility = View.GONE
 
         val categories = listOf(
             "Choose your leave category",
@@ -105,9 +112,9 @@ class AddLeaveFragment : Fragment() {
         leaveCategoryInput.setText(categories[0], false)
 
         leaveCategoryInput.setOnItemClickListener { _, _, position, _ ->
-            val selected = categories[position]
+    val selected = categories[position]
             btnUploadCertificate.visibility = if (selected == "Sick Leave") View.VISIBLE else View.GONE
-        }
+}
 
         btnUploadCertificate.setOnClickListener {
             getContent.launch("application/pdf")
@@ -115,7 +122,8 @@ class AddLeaveFragment : Fragment() {
 
         btnSelectDate.setOnClickListener {
             val today = Calendar.getInstance(TimeZone.getTimeZone("UTC")).timeInMillis
-            val constraintsBuilder = CalendarConstraints.Builder().setValidator(DateValidatorPointForward.now())
+            val constraintsBuilder = CalendarConstraints.Builder()
+                .setValidator(RangeValidator(takenDateRanges))
 
             val picker = MaterialDatePicker.Builder.dateRangePicker()
                 .setTitleText("Select Date Range")
@@ -179,6 +187,8 @@ class AddLeaveFragment : Fragment() {
                 override fun onResponse(call: Call<MessageResponse>, response: Response<MessageResponse>) {
                     progressBar.visibility = View.GONE
                     if (response.isSuccessful) {
+                        takenDateRanges.add(Pair(startDate!!, endDate!!))
+                        saveTakenDateRanges()
                         leaveSubmittedListener?.onLeaveSubmitted(category, startDate!!, endDate!!)
                         Toast.makeText(requireContext(), "Leave submitted", Toast.LENGTH_SHORT).show()
                         parentFragmentManager.popBackStack()
@@ -265,5 +275,21 @@ class AddLeaveFragment : Fragment() {
         }
 
         return true
+    }
+
+    private fun loadTakenDateRanges(): MutableList<Pair<String, String>> {
+        val prefs = requireContext().getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+        val saved = prefs.getString(KEY_TAKEN_RANGES, "") ?: ""
+        if (saved.isBlank()) return mutableListOf()
+        return saved.split(',').mapNotNull { part ->
+            val parts = part.split('=')
+            if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) Pair(parts[0], parts[1]) else null
+        }.toMutableList()
+    }
+
+    private fun saveTakenDateRanges() {
+        val prefs = requireContext().getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+        val serialized = takenDateRanges.joinToString(",") { "${it.first}=${it.second}" }
+        prefs.edit().putString(KEY_TAKEN_RANGES, serialized).apply()
     }
 }

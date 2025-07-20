@@ -87,7 +87,8 @@ class UpdateJobFragment : Fragment() {
             return
         }
 
-        RetrofitClient.recruitingService.getJobOfferById(idLong)
+        val recruitingService = RetrofitClient.getRecruitingService(requireContext())
+        recruitingService.getJobOfferById(idLong)
             .enqueue(object : Callback<JobOfferRequest> {
                 override fun onResponse(
                     call: Call<JobOfferRequest>,
@@ -107,6 +108,7 @@ class UpdateJobFragment : Fragment() {
                 }
             })
     }
+
     private fun populateFields(job: JobOfferRequest) {
         titleInput.setText(job.title)
         departmentInput.setText(job.department)
@@ -168,7 +170,11 @@ class UpdateJobFragment : Fragment() {
             showError("Invalid Job ID")
             return
         }
-        RetrofitClient.recruitingService.updateJobOffer(idLong.toString(), updatedJob)
+        val recruitingService = RetrofitClient.getRecruitingService(requireContext())
+        recruitingService.updateJobOffer(
+            id = jobId,
+            jobOfferRequestDTO = updatedJob
+        )
             .enqueue(object : Callback<Void> {
                 override fun onResponse(call: Call<Void>, response: Response<Void>) {
                     if (response.isSuccessful) {

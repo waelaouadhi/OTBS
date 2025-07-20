@@ -16,9 +16,11 @@ import com.example.onetechbs.adapter.DoctorManagementAdapter
 import com.example.onetechbs.databinding.FragmentDoctorManagementBinding
 import com.example.onetechbs.db.MedicalVisitResponse
 import com.example.onetechbs.DoctorFragment
+import com.example.onetechbs.adapter.AppointmentDialogAdapter
 import com.example.onetechbs.db.MessageResponse
 import com.example.onetechbs.network.RetrofitClient
 import com.example.onetechbs.util.SharedPreferencesManager
+import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
@@ -48,6 +50,17 @@ private var allVisits: List<MedicalVisitResponse> = emptyList()
         setupRecyclerView()
         setupSwipeRefresh()
         initializeToken()
+
+        // Back navigation
+        val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
+        toolbar.setNavigationOnClickListener {
+            try {
+                androidx.navigation.Navigation.findNavController(view)
+                    .popBackStack(R.id.homefraFragment, false)
+            } catch (e: Exception) {
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
+        }
         loadVisits()
 
         // --- Search Bar Logic ---
@@ -72,11 +85,57 @@ private var allVisits: List<MedicalVisitResponse> = emptyList()
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupRecyclerView() {
-        adapter = DoctorManagementAdapter(onDeleteClicked = { visit ->
-            deleteVisit(visit.id)
-        })
+        adapter = DoctorManagementAdapter(
+            onDeleteClicked = { visit -> deleteVisit(visit.id) },
+            onCardClicked = { visit -> showDoctorAppointmentsDialog(visit) }
+        )
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun showDoctorAppointmentsDialog(visit: MedicalVisitResponse) {
+        lifecycleScope.launch {
+            val token = SharedPreferencesManager.getInstance(requireContext()).getAuthToken()
+            if (token.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), "Token missing. Please login again.", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            try {
+                val response = RetrofitClient.medService.getAppointmentsByMedVisitId(visit.id.toString())
+                if (response.isSuccessful) {
+                    val appointments = response.body() ?: emptyList()
+                    appointments.forEachIndexed { idx, appt ->
+                        Log.e("AppointmentDebug", "[$idx] Appointment: $appt")
+                        Log.e("AppointmentDebug", "[$idx] employeeFullName: ${appt.employeeFullName}, employeeEmail: ${appt.employeeEmail}, timeSlot: ${appt.timeSlot}")
+                    }
+                    if (appointments.isEmpty()) {
+                        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                            .setTitle("Appointments for ${visit.doctorName}")
+                            .setMessage("No appointments for this doctor.")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    } else {
+                        val dialogView = layoutInflater.inflate(R.layout.dialog_appointments, null)
+                        val rv = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvAppointments)
+                        val btnClose = dialogView.findViewById<android.widget.Button>(R.id.btnClose)
+                        val tvTitle = dialogView.findViewById<android.widget.TextView>(R.id.tvDialogTitle)
+                        tvTitle.text = "Appointments for ${visit.doctorName}"
+                        rv.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+                        rv.adapter = AppointmentDialogAdapter(appointments)
+                        val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                            .setView(dialogView)
+                            .create()
+                        btnClose.setOnClickListener { dialog.dismiss() }
+                        dialog.show()
+                    }
+                } else {
+                    Toast.makeText(requireContext(), "Failed to fetch appointments", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

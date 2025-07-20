@@ -5,10 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import com.google.android.material.appbar.MaterialToolbar
+import android.view.*
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
@@ -19,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.onetechbs.databinding.FragmentHrLeaveManagementBinding
 import com.example.onetechbs.db.EStatus
 import com.example.onetechbs.db.Leave
+import com.example.onetechbs.db.LeaveStatus
 import com.example.onetechbs.db.MessageResponse
 import com.example.onetechbs.network.RetrofitClient
 import com.example.onetechbs.util.SharedPreferencesManager
@@ -47,8 +45,7 @@ class HRLeaveManagementFragment : Fragment() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Log.d(TAG, "Fragment view created")
-        // Setup toolbar back navigation
+
         binding.toolbar.setNavigationIcon(R.drawable.ic_arrow_back)
         binding.toolbar.setNavigationOnClickListener {
             try {
@@ -77,35 +74,27 @@ class HRLeaveManagementFragment : Fragment() {
     }
 
     private fun filterLeaves(status: EStatus?) {
-        val filteredList = if (status == null) {
-            allLeaves
-        } else {
-            allLeaves.filter { it.status == status }
-        }
+        val filteredList = if (status == null) allLeaves else allLeaves.filter { it.status == status }
         adapter.submitList(filteredList)
         updateUI(filteredList.isEmpty())
+    }
+
+    private fun applyCurrentFilter() {
+        when (binding.filterRadioGroup.checkedRadioButtonId) {
+            R.id.radioAll -> filterLeaves(null)
+            R.id.radioPending -> filterLeaves(EStatus.EN_ATTENTE)
+            R.id.radioRejected -> filterLeaves(EStatus.REFUSÉE)
+            R.id.radioAccepted -> filterLeaves(EStatus.APPROUVÉE)
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupRecyclerView() {
         adapter = LeaveRequestsAdapter(
-            onItemClick = { leave ->
-                Log.d(TAG, "Leave item clicked: ID=${leave.id}")
-                showLeaveDetails(leave)
-            },
-            onApprove = { leave ->
-                Log.d(TAG, "Approving leave ID=${leave.id}")
-                handleApprove(leave)
-            },
-            onReject = { leave ->
-                Log.d(TAG, "Rejecting leave ID=${leave.id}")
-                if (leave.id != null) {
-                    handleRejectWithValidation(leave)
-                }
-            },
-            onRequestPermission = {
-                requestStoragePermission()
-            }
+            onItemClick = { leave -> showLeaveDetails(leave) },
+            onApprove = { leave -> handleApprove(leave) },
+            onReject = { leave -> leave.id?.let { handleRejectWithValidation(leave) } },
+            onRequestPermission = { requestStoragePermission() }
         )
 
         binding.recyclerView.apply {
@@ -117,10 +106,7 @@ class HRLeaveManagementFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupSwipeRefresh() {
-        binding.swipeRefresh.setOnRefreshListener {
-            Log.d(TAG, "Swipe-to-refresh triggered")
-            fetchLeaveRequests()
-        }
+        binding.swipeRefresh.setOnRefreshListener { fetchLeaveRequests() }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -141,25 +127,37 @@ class HRLeaveManagementFragment : Fragment() {
 
         lifecycleScope.launch {
             try {
-                Log.d(TAG, "Fetching leave requests from server...")
-                val response = RetrofitClient.leaveService.getLeaves(
-                    page = 0,
-                    size = 100, // Fetch more items for better UX
-                    sort = "createdAt,desc",
-                    token = "Bearer $authToken",
-                )
+                val response = RetrofitClient.leaveService.getAllReceivedLeaves("Bearer $authToken")
                 if (response.isSuccessful) {
-                    val leavePageResponse = response.body()
-                    allLeaves = leavePageResponse?.content?.sortedByDescending { it.createdAt } ?: emptyList()
+                    val leaveResponseList = response.body() ?: emptyList()
 
-                    // Apply current filter
-                    val checkedId = binding.filterRadioGroup.checkedRadioButtonId
-                    when (checkedId) {
-                        R.id.radioAll -> filterLeaves(null)
-                        R.id.radioPending -> filterLeaves(EStatus.EN_ATTENTE)
-                        R.id.radioRejected -> filterLeaves(EStatus.REFUSÉE)
-                        R.id.radioAccepted -> filterLeaves(EStatus.APPROUVÉE)
-                    }
+                    allLeaves = leaveResponseList
+    .filter { it.id != null && it.startDate != null && it.endDate != null && it.name != null }
+    .map { responseItem ->
+        Leave(
+            id = responseItem.id,
+            userDn = responseItem.name ?: "Unknown",
+            startDate = responseItem.startDate,
+            endDate = responseItem.endDate,
+            leaveType = responseItem.leaveType,
+            status = when (responseItem.status) {
+    EStatus.EN_ATTENTE -> EStatus.EN_ATTENTE
+    EStatus.APPROUVÉE -> EStatus.APPROUVÉE
+    EStatus.REFUSÉE -> EStatus.REFUSÉE
+    EStatus.PENDING -> EStatus.EN_ATTENTE // fallback mapping
+    EStatus.CONFIRMED -> EStatus.APPROUVÉE // fallback mapping
+    else -> EStatus.EN_ATTENTE // default fallback
+},
+            startTime = null,
+            endTime = null,
+            attachment = null,
+            createdAt = null,
+            updatedAt = null
+        )
+    }
+    .sortedByDescending { it.startDate }
+
+                    applyCurrentFilter()
                 } else {
                     showError("Failed to fetch leave requests: ${response.code()}")
                 }
@@ -174,15 +172,8 @@ class HRLeaveManagementFragment : Fragment() {
     }
 
     private fun updateUI(isEmpty: Boolean) {
-        if (isEmpty) {
-            Log.d(TAG, "No leave requests to display - showing empty state")
-            binding.recyclerView.visibility = View.GONE
-            binding.emptyStateLayout.visibility = View.VISIBLE
-        } else {
-            Log.d(TAG, "Leave requests loaded - showing list")
-            binding.recyclerView.visibility = View.VISIBLE
-            binding.emptyStateLayout.visibility = View.GONE
-        }
+        binding.recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+        binding.emptyStateLayout.visibility = if (isEmpty) View.VISIBLE else View.GONE
     }
 
     private fun showLeaveDetails(leave: Leave) {
@@ -192,34 +183,41 @@ class HRLeaveManagementFragment : Fragment() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun handleApprove(leave: Leave) {
         val today = LocalDate.now()
-
-        // Validate dates
-        if (leave.startDate != null && leave.startDate.isBefore(today)) {
+        if (leave.startDate == null) {
+            Toast.makeText(requireContext(), "Missing start date.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (leave.endDate == null) {
+            Toast.makeText(requireContext(), "Missing end date.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (leave.startDate.isBefore(today)) {
             Toast.makeText(requireContext(), "Start date is in the past ❌", Toast.LENGTH_SHORT).show()
             return
         }
-        if (leave.endDate != null && leave.endDate.isBefore(today.plusDays(1))) {
+        if (leave.endDate.isBefore(today.plusDays(1))) {
             Toast.makeText(requireContext(), "End date must be in the future ❌", Toast.LENGTH_SHORT).show()
             return
         }
-
+        if (leave.id == null) {
+            Toast.makeText(requireContext(), "Invalid leave ID.", Toast.LENGTH_SHORT).show()
+            return
+        }
         val token = SharedPreferencesManager.getInstance(requireContext()).getAuthToken()
         if (token.isNullOrEmpty()) {
             Toast.makeText(requireContext(), "Token missing. Please login again.", Toast.LENGTH_SHORT).show()
             return
         }
-
-        RetrofitClient.leaveService.approveLeave(leave.id!!, "Bearer $token")
+        RetrofitClient.leaveService.approveLeave(leave.id, "Bearer $token")
             .enqueue(object : Callback<MessageResponse> {
                 override fun onResponse(call: Call<MessageResponse>, response: Response<MessageResponse>) {
                     if (response.isSuccessful) {
                         Toast.makeText(requireContext(), "Leave approved ✅", Toast.LENGTH_SHORT).show()
-                        fetchLeaveRequests() // Refresh list after approval
+                        fetchLeaveRequests()
                     } else {
-                        Toast.makeText(requireContext(), "Failed: ${response.errorBody()?.string()}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Failed: ${response.code()}", Toast.LENGTH_SHORT).show()
                     }
                 }
-
                 override fun onFailure(call: Call<MessageResponse>, t: Throwable) {
                     Toast.makeText(requireContext(), "Error: ${t.message}", Toast.LENGTH_SHORT).show()
                 }
@@ -229,21 +227,24 @@ class HRLeaveManagementFragment : Fragment() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun handleRejectWithValidation(leave: Leave) {
         val today = LocalDate.now()
-
-        // Check if leave end date is in the past
-        if (leave.endDate != null && leave.endDate.isBefore(today)) {
-            // Show alert or Toast to user that reject is not possible
+        if (leave.endDate == null) {
+            Toast.makeText(requireContext(), "Missing end date.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (leave.id == null) {
+            Toast.makeText(requireContext(), "Invalid leave ID.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (leave.endDate.isBefore(today)) {
             Toast.makeText(requireContext(), "Cannot reject leave: leave period is in the past.", Toast.LENGTH_LONG).show()
             return
         }
-
-        // If validation passes, proceed with actual reject
-        leave.id?.let { handleReject(it) }
+        handleReject(leave.id)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun handleReject(leaveId: Long) {
         val token = SharedPreferencesManager.getInstance(requireContext()).getAuthToken()
-
         if (token.isNullOrEmpty()) {
             Toast.makeText(requireContext(), "Token missing. Please login again.", Toast.LENGTH_SHORT).show()
             return
@@ -254,9 +255,9 @@ class HRLeaveManagementFragment : Fragment() {
                 override fun onResponse(call: Call<MessageResponse>, response: Response<MessageResponse>) {
                     if (response.isSuccessful) {
                         Toast.makeText(requireContext(), "Leave rejected ❌", Toast.LENGTH_SHORT).show()
-                        fetchLeaveRequests() // Refresh list after rejection
+                        fetchLeaveRequests()
                     } else {
-                        Toast.makeText(requireContext(), "Failed: ${response.errorBody()?.string()}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Failed: ${response.code()}", Toast.LENGTH_SHORT).show()
                     }
                 }
 
@@ -272,13 +273,12 @@ class HRLeaveManagementFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        Log.d(TAG, "Fragment view destroyed")
         _binding = null
     }
 
     private fun checkStoragePermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            true // Android 10 and above use scoped storage
+            true
         } else {
             ContextCompat.checkSelfPermission(
                 requireContext(),
@@ -302,13 +302,11 @@ class HRLeaveManagementFragment : Fragment() {
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
-        when (requestCode) {
-            STORAGE_PERMISSION_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(requireContext(), "Storage permission granted", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(requireContext(), "Storage permission denied", Toast.LENGTH_SHORT).show()
-                }
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(requireContext(), "Storage permission granted", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Storage permission denied", Toast.LENGTH_SHORT).show()
             }
         }
     }

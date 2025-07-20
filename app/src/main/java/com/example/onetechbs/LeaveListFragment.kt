@@ -8,7 +8,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.onetechbs.databinding.FragmentLeaveListBinding
 import com.example.onetechbs.db.LeaveResponse
@@ -41,9 +43,21 @@ class LeaveListFragment : Fragment() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupToolbar()
         setupRecyclerView()
         setupSwipeRefresh()
         fetchLeaves()
+    }
+
+    private fun setupToolbar() {
+        (activity as? AppCompatActivity)?.setSupportActionBar(binding.toolbar)
+        (activity as? AppCompatActivity)?.supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            setDisplayShowHomeEnabled(true)
+        }
+        binding.toolbar.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
     }
 
     private fun setupRecyclerView() {
@@ -81,16 +95,18 @@ class LeaveListFragment : Fragment() {
                     val converted = leaves.map { leave ->
                         LeaveResponse(
                             id = leave.id ?: 0L,
-                            name = leave.userDn.substringBefore(","),
+                            name = leave.userDn?.substringBefore(",") ?: "",
                             department = "",
                             startDate = leave.startDate,
                             endDate = leave.endDate,
                             leaveType = leave.leaveType,
-                            status = when (leave.status) {
-                                EStatus.APPROUVÉE -> LeaveStatus.APPROVED
-                                EStatus.REFUSÉE -> LeaveStatus.REJECTED
-                                else -> LeaveStatus.PENDING
-                            }
+                            status = when (leave.status ?: EStatus.EN_ATTENTE) {
+    EStatus.EN_ATTENTE -> EStatus.EN_ATTENTE
+    EStatus.APPROUVÉE -> EStatus.APPROUVÉE
+    EStatus.REFUSÉE -> EStatus.REFUSÉE
+    EStatus.CONFIRMED -> EStatus.APPROUVÉE
+    EStatus.PENDING -> EStatus.EN_ATTENTE
+}
                         )
                     }
                     leaveList.clear()

@@ -8,7 +8,8 @@ import com.example.onetechbs.db.MedicalVisitResponse
 
 
 class DoctorManagementAdapter(
-    private val onDeleteClicked: (MedicalVisitResponse) -> Unit
+    private val onDeleteClicked: (MedicalVisitResponse) -> Unit,
+    private val onCardClicked: (MedicalVisitResponse) -> Unit
 ) : RecyclerView.Adapter<DoctorManagementAdapter.VisitViewHolder>() {
 
     private val visits = mutableListOf<MedicalVisitResponse>()
@@ -27,6 +28,9 @@ class DoctorManagementAdapter(
             binding.timeRange.text = "Time: ${visit.startTime} - ${visit.endTime}"
             binding.deleteButton.setOnClickListener {
                 onDeleteClicked(visit)
+            }
+            binding.root.setOnClickListener {
+                onCardClicked(visit)
             }
         }
     }

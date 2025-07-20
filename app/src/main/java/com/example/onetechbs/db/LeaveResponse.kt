@@ -1,15 +1,17 @@
 package com.example.onetechbs.db
 
 import com.example.onetechbs.db.LeaveStatus
-import java.time.LocalDate
 import com.example.onetechbs.db.ELeaveType
 
- class LeaveResponse(
+ import com.google.gson.annotations.SerializedName
+import java.time.LocalDate
+
+class LeaveResponse(
     val id: Long,
-    val name: String,
-    val department: String,
-    val startDate: LocalDate,
-    val endDate: LocalDate,
-    val leaveType: ELeaveType,
-    val status: LeaveStatus
+    @SerializedName("Name") val name: String,
+    @SerializedName("Department") val department: String,
+    @SerializedName("startDate") val startDate: LocalDate,
+    @SerializedName("endDate") val endDate: LocalDate,
+    @SerializedName("leaveType") val leaveType: ELeaveType,
+    @SerializedName("status") val status: EStatus
 )

@@ -45,6 +45,10 @@ class TrainingFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupUI() {
+        // Setup department dropdown
+        val departments = listOf("HR", "Engineering", "Marketing", "Sales", "Finance", "Operations")
+        val deptAdapter = android.widget.ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, departments)
+        binding.departmentEditText.setAdapter(deptAdapter)
         // Set up toolbar
         val toolbar = binding.root.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
         toolbar.setNavigationOnClickListener {
@@ -98,7 +102,13 @@ class TrainingFragment : Fragment() {
 
         if (title.isEmpty() || description.isEmpty() || department.isEmpty() ||
             selectedStartDate == null || selectedEndDate == null) {
-            Toast.makeText(requireContext(), "Please fill all fields and pick a date range!", Toast.LENGTH_SHORT).show()
+            val msg = buildString {
+                if (title.isEmpty()) append("Title, ")
+                if (description.isEmpty()) append("Description, ")
+                if (department.isEmpty()) append("Department, ")
+                if (selectedStartDate==null || selectedEndDate==null) append("Date range, ")
+            }.removeSuffix(", ")
+            Toast.makeText(requireContext(), "Please complete: $msg", Toast.LENGTH_LONG).show()
             return
         }
 

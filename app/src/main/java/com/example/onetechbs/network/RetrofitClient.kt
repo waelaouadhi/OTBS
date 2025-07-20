@@ -23,15 +23,27 @@ import java.util.concurrent.TimeUnit
 
 @RequiresApi(Build.VERSION_CODES.O)
 object RetrofitClient {
-
-    private const val AUTH_BASE_URL = "http://172.31.4.154:8081/"
-    private const val EMPLOYEE_BASE_URL = "http://172.31.4.154:8082/"
-    private const val LEAVE_BASE_URL = "http://172.31.4.154:8083/"
-    private const val TRAINING_BASE_URL = "http://172.31.4.154:8087/"
-    private const val NOTIFICATION_BASE_URL = "http://172.31.4.154:8086/"
-    private const val MED_BASE_URL = "http://172.31.4.154:8085/"
-    private const val RECRUITING_BASE_URL = "http://172.31.4.154:8088/"
-    private const val CONDIDATE_BASE_URL = "http://172.31.4.154:8089/"
+    /** * Singleton object for Retrofit client to handle API requests.
+     * * This object provides a single instance of Retrofit configured with
+     * * base URLs for different services, interceptors for logging and authentication,
+     *  * and methods to create service instances.
+     *  *  It also includes methods to set and get authentication tokens,
+     *  * and fetch notifications.
+     *  *  * The base URLs are hardcoded for different services such as authentication,
+     *  * employee management, leave management, training, notifications, medical services,
+     *  * and recruiting.
+     *  *  * The client is configured with timeouts for connection, read, and write operations,
+     *  * and includes interceptors for adding authentication headers and logging requests and responses.
+     *
+     */
+    private const val AUTH_BASE_URL = "http://192.168.1.78:8081/"
+    private const val EMPLOYEE_BASE_URL = "http://192.168.1.78:8082/"
+    private const val LEAVE_BASE_URL = "http://192.168.1.78:8083/"
+    private const val TRAINING_BASE_URL = "http://192.168.1.78:8087/"
+    private const val NOTIFICATION_BASE_URL = "http://192.168.1.78:8086/"
+    private const val MED_BASE_URL = "http://192.168.1.78:8085/"
+    private const val RECRUITING_BASE_URL = "http://192.168.1.78:8088/"
+    private const val CONDIDATE_BASE_URL = "http://192.168.1.78:8089/"
 
 
     private const val CONNECT_TIMEOUT = 30L
@@ -103,8 +115,32 @@ object RetrofitClient {
         createRetrofit(TRAINING_BASE_URL).create(TrainingService::class.java)
     }
 
-    val recruitingService: ApiService by lazy {
-        createRetrofit(RECRUITING_BASE_URL).create(ApiService::class.java)
+    fun getRecruitingService(context: Context): ApiService {
+        val prefs = SharedPreferencesManager.getInstance(context)
+        val token = prefs.getAuthToken()
+        val gson = com.google.gson.GsonBuilder()
+            .registerTypeAdapter(java.time.LocalDateTime::class.java, com.example.onetechbs.util.LocalDateTimeAdapter())
+            .create()
+
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val requestBuilder = chain.request().newBuilder()
+                if (!token.isNullOrEmpty()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+                chain.proceed(requestBuilder.build())
+            }
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .build()
+
+        return Retrofit.Builder()
+            .baseUrl(RECRUITING_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+            .create(ApiService::class.java)
     }
 
     val candidateService: ApiService by lazy {

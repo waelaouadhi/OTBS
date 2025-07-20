@@ -3,12 +3,14 @@ package com.example.onetechbs
 import android.annotation.SuppressLint
 import android.os.Build
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.onetechbs.databinding.ItemLeaveRequestBinding
+import com.example.onetechbs.db.EStatus
 import com.example.onetechbs.db.LeaveResponse
 import com.example.onetechbs.db.LeaveStatus
 import java.time.format.DateTimeFormatter
@@ -42,14 +44,17 @@ class LeaveListAdapter : ListAdapter<LeaveResponse, LeaveListAdapter.LeaveViewHo
                 employeeName.text = leave.name
                 leaveType.text = leave.leaveType.toString()
                 dateRange.text = "${leave.startDate.format(dateFormatter)} - ${leave.endDate.format(dateFormatter)}"
-                
+
+                btnApprove.visibility = View.GONE
+                btnReject.visibility = View.GONE
+
                 // Set status text and color
                 status.text = leave.status.toString()
                 status.setBackgroundResource(
                     when (leave.status) {
-                        LeaveStatus.APPROVED -> android.R.color.holo_green_light
-                        LeaveStatus.REJECTED -> android.R.color.holo_red_light
-                        LeaveStatus.PENDING -> android.R.color.holo_orange_light
+                        EStatus.APPROUVÉE -> android.R.color.holo_green_light
+                        EStatus.REFUSÉE -> android.R.color.holo_red_light
+                        EStatus.PENDING -> android.R.color.holo_orange_light
                         else -> android.R.color.darker_gray
                     }
                 )

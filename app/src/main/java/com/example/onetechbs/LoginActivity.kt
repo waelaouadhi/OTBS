@@ -5,17 +5,21 @@ import android.os.Build
 import android.os.Bundle
 import android.text.InputFilter
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.example.onetechbs.db.AuthRequest
 import com.example.onetechbs.db.EmployeeResponse
 import com.example.onetechbs.db.JwtResponse
 import com.example.onetechbs.network.RetrofitClient
 import com.example.onetechbs.util.SharedPreferencesManager
 import com.example.onetechbs.websocket.WebSocketService
+import com.google.android.material.snackbar.Snackbar
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -26,6 +30,8 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var passwordEditText: EditText
     private lateinit var loginButton: Button
     private lateinit var forgotPwdButton: Button
+    private lateinit var progressBar: ProgressBar
+    private lateinit var blurOverlay: View
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,6 +42,8 @@ class LoginActivity : AppCompatActivity() {
         passwordEditText = findViewById(R.id.editTextTextPassword)
         loginButton = findViewById(R.id.login)
         forgotPwdButton = findViewById(R.id.forgotpwd)
+        progressBar = findViewById(R.id.loginProgressBar)
+        blurOverlay = findViewById(R.id.blurOverlay)
 
         // Prevent spaces in username input
         usernameEditText.filters = arrayOf(InputFilter { source, _, _, _, _, _ ->
@@ -44,6 +52,14 @@ class LoginActivity : AppCompatActivity() {
 
         loginButton.setOnClickListener {
             if (validateInputs()) {
+                progressBar.visibility = View.VISIBLE
+                blurOverlay.visibility = View.VISIBLE
+                loginButton.isEnabled = false
+                forgotPwdButton.isEnabled = false
+                forgotPwdButton.alpha = 0.5f
+                forgotPwdButton.isEnabled = false
+                forgotPwdButton.alpha = 0.5f
+
                 val username = usernameEditText.text.toString().trim()
                 val password = passwordEditText.text.toString()
 
@@ -51,6 +67,9 @@ class LoginActivity : AppCompatActivity() {
 
                 RetrofitClient.authService.login(authRequest).enqueue(object : Callback<JwtResponse> {
                     override fun onResponse(call: Call<JwtResponse>, response: Response<JwtResponse>) {
+                        progressBar.visibility = View.GONE
+                        blurOverlay.visibility = View.GONE
+                        loginButton.isEnabled = true
                         if (response.isSuccessful) {
                             val jwtResponse = response.body()
                             val spm = SharedPreferencesManager.getInstance(this@LoginActivity)
@@ -99,23 +118,36 @@ class LoginActivity : AppCompatActivity() {
                                         startActivity(Intent(this@LoginActivity, home::class.java))
                                         finish()
                                     } else {
-                                        Toast.makeText(this@LoginActivity, "Failed to fetch employee data", Toast.LENGTH_SHORT).show()
+                                        Snackbar.make(loginButton, "Failed to fetch employee data", Snackbar.LENGTH_LONG)
+                                            .setBackgroundTint(ContextCompat.getColor(this@LoginActivity, com.google.android.material.R.color.design_default_color_error))
+                                            .show()
                                     }
                                 }
 
                                 override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
-                                    Toast.makeText(this@LoginActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                                    Snackbar.make(loginButton, "Error: ${t.message}", Snackbar.LENGTH_LONG)
+                                        .setBackgroundTint(ContextCompat.getColor(this@LoginActivity, com.google.android.material.R.color.design_default_color_error))
+                                        .show()
                                 }
                             })
 
                         } else {
-                            Toast.makeText(this@LoginActivity, "Login failed: ${response.message()}", Toast.LENGTH_SHORT).show()
+                            Snackbar.make(loginButton, "Incorrect username or password", Snackbar.LENGTH_LONG)
+                                .setBackgroundTint(ContextCompat.getColor(this@LoginActivity, com.google.android.material.R.color.design_default_color_error))
+                                .show()
+                            passwordEditText.text?.clear()
                         }
                     }
 
                     override fun onFailure(call: Call<JwtResponse>, t: Throwable) {
-                        Toast.makeText(this@LoginActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
-                        Log.e("LoginActivity", "Login error: ${t.message}", t)
+                        progressBar.visibility = View.GONE
+                        blurOverlay.visibility = View.GONE
+                        loginButton.isEnabled = true
+                        forgotPwdButton.isEnabled = true
+                        forgotPwdButton.alpha = 1.0f
+                        Snackbar.make(loginButton, "Network error: ${t.localizedMessage}", Snackbar.LENGTH_LONG)
+                            .setBackgroundTint(ContextCompat.getColor(this@LoginActivity, com.google.android.material.R.color.design_default_color_error))
+                            .show()
                     }
                 })
             }

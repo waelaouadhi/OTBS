@@ -95,8 +95,8 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/departmentInputLayout"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="350dp"
-                android:layout_height="50dp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:hint="@string/department"
                 app:boxBackgroundColor="@color/md_theme_surface"
@@ -122,7 +122,7 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/selectDateRangeButton"
                 style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="353dp"
+                android:layout_width="0dp"
                 android:layout_height="63dp"
                 android:layout_marginTop="24dp"
                 android:drawablePadding="8dp"
@@ -147,7 +147,7 @@
             <TextView
                 android:id="@+id/dateRangeText"
                 style="@style/TextAppearance.MaterialComponents.Caption"
-                android:layout_width="402dp"
+                android:layout_width="0dp"
                 android:layout_height="18dp"
                 android:layout_marginTop="4dp"
                 android:paddingStart="16dp"

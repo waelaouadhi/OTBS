@@ -11,6 +11,15 @@
         <item>Emergency Leave</item>
         <item>Unpaid Leave</item>
     </string-array>
+
+    <string-array name="document_types">
+        <item>Employment Contract</item>
+        <item>Work Certificate (Attestation de Travail)</item>
+        <item>Payslip</item>
+        <item>Experience Letter</item>
+        <item>End-of-Contract Certificate</item>
+        <item>CNSS Declaration</item>
+    </string-array>
     <string name="applicants">Applicants</string>
     <string name="no_applicants">No applicants found for this position</string>
     <string name="close">Close</string>

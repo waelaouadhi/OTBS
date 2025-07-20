@@ -51,6 +51,7 @@ android {
 }
 
 dependencies {
+
     // Core dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -114,6 +115,7 @@ dependencies {
     implementation ("io.reactivex.rxjava2:rxandroid:2.1.1")
     implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
     implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
+    implementation ("com.ramotion.foldingcell:folding-cell:1.2.3")
 
 
 

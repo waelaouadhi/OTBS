@@ -30,7 +30,7 @@
                     android:text="Update Job"
                     android:textSize="24sp"
                     android:textStyle="bold"
-                    android:textColor="#1E88E5"
+                    android:textColor="#E51E1E"
                     android:fontFamily="@font/kode_mono"
                     android:layout_marginBottom="16dp"/>
 

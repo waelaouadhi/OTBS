@@ -7,15 +7,21 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.content.Intent
+import android.graphics.Canvas
+import android.graphics.drawable.ColorDrawable
+import android.os.CountDownTimer
 import com.example.onetechbs.util.SharedPreferencesManager
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.onetechbs.db.CandidateResponseDTO
+import com.example.onetechbs.db.JobOfferRequest
 import com.example.onetechbs.db.JobOfferResponseDTO
 import com.example.onetechbs.network.RetrofitClient
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -43,6 +49,8 @@ class AvailableJobsFragment : Fragment() {
             initializeViews()
             setupUserRole()
             setupRecyclerView()
+            setupShakeToUndo() // Initialize shake detection
+            setupSwipeToDelete()
             setupSwipeRefresh()
             loadJobs()
         }
@@ -83,6 +91,239 @@ class AvailableJobsFragment : Fragment() {
         }
     }
 
+    // --- Shake to Undo State ---
+    private var recentlyDeletedJob: JobOfferResponseDTO? = null
+    private var recentlyDeletedPosition: Int = -1
+    private var undoTimer: CountDownTimer? = null
+    private var shakeListenerRegistered = false
+    private lateinit var sensorManager: android.hardware.SensorManager
+    private lateinit var accelerometer: android.hardware.Sensor
+    private var lastShakeTime = 0L
+
+    private val shakeListener = object : android.hardware.SensorEventListener {
+        private var lastX = 0f
+        private var lastY = 0f
+        private var lastZ = 0f
+        private val shakeThreshold = 12f
+        @RequiresApi(Build.VERSION_CODES.O)
+        override fun onSensorChanged(event: android.hardware.SensorEvent?) {
+            event?.let {
+                val x = it.values[0]
+                val y = it.values[1]
+                val z = it.values[2]
+                val now = System.currentTimeMillis()
+                if (now - lastShakeTime > 500) {
+                    val delta = Math.abs(x + y + z - lastX - lastY - lastZ)
+                    if (delta > shakeThreshold) {
+                        lastShakeTime = now
+                        val vibrator = ContextCompat.getSystemService(requireContext(), android.os.Vibrator::class.java)
+                        vibrator?.vibrate(android.os.VibrationEffect.createOneShot(100, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                        MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Undo Delete?")
+                            .setMessage("Shake detected. Restore the deleted job?")
+                            .setPositiveButton("Restore") { _, _ -> restoreDeletedJob() }
+                            .setNegativeButton("No", null)
+                            .setOnDismissListener { unregisterShakeListener() }
+                            .show()
+                    }
+                }
+                lastX = x
+                lastY = y
+                lastZ = z
+            }
+        }
+        override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) {}
+    }
+
+    private fun registerShakeListener() {
+        if (!shakeListenerRegistered) {
+            sensorManager.registerListener(shakeListener, accelerometer, android.hardware.SensorManager.SENSOR_DELAY_UI)
+            shakeListenerRegistered = true
+        }
+    }
+    private fun unregisterShakeListener() {
+        if (shakeListenerRegistered) {
+            sensorManager.unregisterListener(shakeListener)
+            shakeListenerRegistered = false
+        }
+    }
+    private fun temporarilyRemoveJob(job: JobOfferResponseDTO, position: Int) {
+        recentlyDeletedJob = job
+        recentlyDeletedPosition = position
+        val mutableList = jobAdapter.currentList.toMutableList()
+        mutableList.removeAt(position)
+        jobAdapter.submitList(mutableList)
+        registerShakeListener()
+        undoTimer?.cancel()
+        undoTimer = object : android.os.CountDownTimer(5000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {}
+            @RequiresApi(Build.VERSION_CODES.O)
+            override fun onFinish() {
+                // If not restored, actually delete from backend
+                recentlyDeletedJob?.let { jobToDelete ->
+                    handleDeleteJob(jobToDelete)
+                }
+                unregisterShakeListener()
+                recentlyDeletedJob = null
+                recentlyDeletedPosition = -1
+            }
+        }.start()
+    }
+    private fun restoreDeletedJob() {
+        recentlyDeletedJob?.let { job ->
+            val mutableList = jobAdapter.currentList.toMutableList()
+            val pos = if (recentlyDeletedPosition in 0..mutableList.size) recentlyDeletedPosition else 0
+            mutableList.add(pos, job)
+            jobAdapter.submitList(mutableList)
+            recyclerView.post {
+                recyclerView.scrollToPosition(pos)
+                val holder = recyclerView.findViewHolderForAdapterPosition(pos)
+                holder?.itemView?.apply {
+                    alpha = 0f
+                    animate().alpha(1f).setDuration(300).start()
+                }
+            }
+            com.google.android.material.snackbar.Snackbar.make(recyclerView, "Job restored", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show()
+            recentlyDeletedJob = null
+            recentlyDeletedPosition = -1
+        }
+        unregisterShakeListener()
+        undoTimer?.cancel()
+    }
+
+    private fun setupShakeToUndo() {
+        sensorManager = requireContext().getSystemService(Context.SENSOR_SERVICE) as android.hardware.SensorManager
+        accelerometer = sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)!!
+    }
+
+    private fun setupSwipeToDelete() {
+        val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
+                return if (isHR) {
+                    super.getMovementFlags(recyclerView, viewHolder)
+                } else {
+                    0 // Disable swipe for non-HR users
+                }
+            }
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
+
+            @RequiresApi(Build.VERSION_CODES.O)
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                val job = jobAdapter.currentList[position]
+                val vibrator = ContextCompat.getSystemService(requireContext(), android.os.Vibrator::class.java)
+                vibrator?.vibrate(android.os.VibrationEffect.createOneShot(50, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+
+                val itemView = viewHolder.itemView
+
+                if (direction == ItemTouchHelper.LEFT) {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(getString(R.string.delete_job_title))
+                        .setMessage(getString(R.string.delete_job_message))
+                        .setPositiveButton(getString(R.string.delete)) { _, _ ->
+                            itemView.animate()
+                                .alpha(0f)
+                                .setDuration(200)
+                                .withEndAction {
+                                    temporarilyRemoveJob(job, position)
+                                    itemView.alpha = 1f
+                                }
+                                .start()
+                        }
+                        .setNegativeButton(getString(R.string.cancel)) { _, _ ->
+                            jobAdapter.notifyItemChanged(position)
+                        }
+                        .setOnCancelListener {
+                            jobAdapter.notifyItemChanged(position)
+                        }
+                        .show()
+                } else if (direction == ItemTouchHelper.RIGHT) {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(getString(R.string.finish_job_title))
+                        .setMessage(getString(R.string.finish_job_message))
+                        .setPositiveButton(getString(R.string.finish)) { _, _ ->
+                            itemView.animate()
+                                .alpha(0f)
+                                .setDuration(200)
+                                .withEndAction {
+                                    finishJob(job.id.toString())
+                                    itemView.alpha = 1f
+                                }
+                                .start()
+                        }
+                        .setNegativeButton(getString(R.string.cancel)) { _, _ ->
+                            jobAdapter.notifyItemChanged(position)
+                        }
+                        .setOnCancelListener {
+                            jobAdapter.notifyItemChanged(position)
+                        }
+                        .show()
+                }
+            }
+
+            override fun onChildDraw(
+                c: Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float,
+                dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                val itemView = viewHolder.itemView
+                val iconMargin: Int
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+                    if (dX < 0) { // Swipe left for delete
+                        val background = ColorDrawable(ContextCompat.getColor(requireContext(), android.R.color.holo_orange_dark))
+                        background.setBounds(
+                            itemView.right + dX.toInt(),
+                            itemView.top,
+                            itemView.right,
+                            itemView.bottom
+                        )
+                        background.draw(c)
+                        val icon = ContextCompat.getDrawable(requireContext(), R.drawable.baseline_delete_24)
+                        icon?.let {
+                            iconMargin = (itemView.height - it.intrinsicHeight) / 2
+                            val iconTop = itemView.top + iconMargin
+                            val iconBottom = iconTop + it.intrinsicHeight
+                            val iconLeft = itemView.right - iconMargin - it.intrinsicWidth
+                            val iconRight = itemView.right - iconMargin
+                            it.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+                            it.draw(c)
+                        }
+                    } else if (dX > 0) { // Swipe right for finish
+                        val background = ColorDrawable(ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark))
+                        background.setBounds(
+                            itemView.left,
+                            itemView.top,
+                            itemView.left + dX.toInt(),
+                            itemView.bottom
+                        )
+                        background.draw(c)
+                        val icon = ContextCompat.getDrawable(requireContext(), R.drawable.baseline_check_circle_24)
+                        icon?.let {
+                            iconMargin = (itemView.height - it.intrinsicHeight) / 2
+                            val iconTop = itemView.top + iconMargin
+                            val iconBottom = iconTop + it.intrinsicHeight
+                            val iconLeft = itemView.left + iconMargin
+                            val iconRight = iconLeft + it.intrinsicWidth
+                            it.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+                            it.draw(c)
+                        }
+                    }
+                }
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
+        }
+        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
+        itemTouchHelper.attachToRecyclerView(recyclerView)
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupSwipeRefresh() {
         swipeRefreshLayout.apply {
@@ -94,7 +335,8 @@ class AvailableJobsFragment : Fragment() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun loadJobs() {
         showLoading(true)
-        RetrofitClient.recruitingService.getAllJobOffers()
+        val recruitingService = RetrofitClient.getRecruitingService(requireContext())
+        recruitingService.getAllJobOffers()
             .enqueue(object : Callback<List<JobOfferResponseDTO>> {
                 override fun onResponse(
                     call: Call<List<JobOfferResponseDTO>>,
@@ -161,7 +403,8 @@ class AvailableJobsFragment : Fragment() {
 
         showLoading(true)
 
-        RetrofitClient.recruitingService.toggleJobOfferStatus(
+        val recruitingService = RetrofitClient.getRecruitingService(requireContext())
+        recruitingService.toggleJobOfferStatus(
             jobId = jobId,
             status = "CLOSED", // must be one of: OPEN, CLOSED, CONVERTED_TO_EXTERNAL, CONVERTED_TO_INTERNAL
             token = "Bearer $token"
@@ -199,7 +442,8 @@ class AvailableJobsFragment : Fragment() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun deleteJob(jobId: String) {
         showLoading(true)
-        RetrofitClient.recruitingService.deleteJobOffer(jobId)
+        val recruitingService = RetrofitClient.getRecruitingService(requireContext())
+        recruitingService.deleteJobOffer(jobId)
             .enqueue(object : Callback<Void> {
                 override fun onResponse(call: Call<Void>, response: Response<Void>) {
                     showLoading(false)
@@ -336,6 +580,8 @@ class AvailableJobsFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        unregisterShakeListener()
+        undoTimer?.cancel()
         rootView = null
     }
 

@@ -69,7 +69,7 @@ class NotificationFragment : Fragment() {
 
             notificationAdapter.submitList(notifications)
 
-            binding.emptyView.visibility = if (notifications.isEmpty()) View.VISIBLE else View.GONE
+            binding.emptyView.visibility = if (notifications.isEmpty()) View.VISIBLE else View.GONE // emptyView is now a TextView
             Log.d(TAG, if (notifications.isEmpty()) "No notifications available" else "Displaying notifications")
         }
     }
@@ -97,7 +97,7 @@ class NotificationFragment : Fragment() {
             jwtToken = sharedPreferencesManager.getAuthToken() ?: ""
         }
 
-        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://172.31.4.235:8086"
+        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://172.31.4.5:8086"
         val request = Request.Builder()
             .url("$serverUrl/api/v1/notifications")
             .header("Authorization", "Bearer $jwtToken")
@@ -141,7 +141,7 @@ class NotificationFragment : Fragment() {
             return@withContext false
         }
 
-        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://172.31.4.235:8086"
+        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://172.31.4.5:8086"
         val refreshUrl = "$serverUrl/api/v1/auth/refresh"
 
         Log.d(TAG, "🔍 DEBUG: Starting JWT refresh operation")

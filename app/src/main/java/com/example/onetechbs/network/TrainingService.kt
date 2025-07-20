@@ -13,7 +13,10 @@ import retrofit2.http.Path
 import retrofit2.http.PUT
 
 interface TrainingService {
-    // Remove the body - interface methods should not have implementation
+    /**
+     * Service interface for managing training sessions.
+     * Provides methods to create, retrieve, and confirm training invitations.
+     */
     @GET("api/v1/trainings")
     suspend fun getTrainings(
         @Header("Authorization") token: String

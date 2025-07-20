@@ -22,13 +22,6 @@
             app:title="Available Trainings"
             app:titleTextColor="@color/md_theme_primary" />
 
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"/>
-
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -41,29 +34,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <TextView
-                android:id="@+id/title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Available Trainings"
-                android:textSize="24sp"
-                android:textColor="@color/md_theme_primary"
-                android:fontFamily="sans-serif-medium"
-                android:layout_margin="16dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
 
-            <TextView
-                android:id="@+id/sortLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Latest First"
-                android:textSize="14sp"
-                android:textColor="@color/md_theme_onSurfaceVariant"
-                android:layout_marginEnd="16dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/title"
-                app:layout_constraintBottom_toBottomOf="@id/title"/>
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/filterChipGroup"
@@ -72,9 +43,10 @@
                 android:layout_margin="8dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/title"
-                app:layout_constraintVertical_bias="0.0"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.026"
                 app:singleSelection="true">
 
                 <com.google.android.material.chip.Chip
@@ -98,13 +70,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Accepted" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipRejected"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Rejected" />
 
             </com.google.android.material.chip.ChipGroup>
 

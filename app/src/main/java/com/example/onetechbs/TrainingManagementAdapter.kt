@@ -49,14 +49,15 @@ class TrainingManagementAdapter(
             dateTextView.text = "${training.startDate} - ${training.endDate}"
             descriptionTextView.text = training.description
 
-            val totalParticipants = training.invitations.size
-            val acceptedParticipants = training.invitations.count { it.status.name == "CONFIRMED" }
+            val invitations = training.invitations ?: emptyList()
+            val totalParticipants = invitations.size
+            val acceptedParticipants = invitations.count { it.status?.name == "CONFIRMED" }
 
             participantsCountTextView.text = "Total Participants: $totalParticipants"
 
-            val acceptedNames = training.invitations
-                .filter { it.status.name == "CONFIRMED" }
-                .mapNotNull { it.employeeName.takeIf { name -> name.isNotBlank() } }
+            val acceptedNames = invitations
+                .filter { it.status?.name == "CONFIRMED" }
+                .mapNotNull { it.employeeName?.takeIf { name -> name.isNotBlank() } }
                 .joinToString(separator = "\n")
 
             acceptedCountTextView.text = if (acceptedNames.isNotEmpty()) {
@@ -65,22 +66,20 @@ class TrainingManagementAdapter(
                 "Accepted: 0"
             }
 
-            setupParticipantsList(training)
-
-
+            setupParticipantsList(invitations)
 
             deleteTrainingButton.setOnClickListener {
                 onDeleteClick(training.id)
             }
         }
 
-        private fun setupParticipantsList(training: TrainingResponseDTO) {
+        private fun setupParticipantsList(invitations: List<InvitationResponseDTO>) {
             val participantsAdapter = ParticipantsAdapter()
             participantsRecyclerView.apply {
                 layoutManager = LinearLayoutManager(context)
                 adapter = participantsAdapter
             }
-            participantsAdapter.submitList(training.invitations)
+            participantsAdapter.submitList(invitations)
         }
     }
 

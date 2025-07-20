@@ -42,13 +42,13 @@ class TrainingAdapter(private val userId: String) :
         val filteredList = when (filter) {
             TrainingFilter.ALL -> allTrainings
             TrainingFilter.AVAILABLE -> allTrainings.filter {
-                it.invitations.any { inv -> inv.employeeId == userId && inv.status == EStatus.PENDING }
+                it.invitations?.any { inv -> inv.employeeId == userId && inv.status == EStatus.PENDING } == true
             }
             TrainingFilter.ACCEPTED -> allTrainings.filter {
-                it.invitations.any { inv -> inv.employeeId == userId && inv.status == EStatus.CONFIRMED }
+                it.invitations?.any { inv -> inv.employeeId == userId && inv.status == EStatus.CONFIRMED } == true
             }
             TrainingFilter.REJECTED -> allTrainings.filter {
-                it.invitations.any { inv -> inv.employeeId == userId && inv.status == EStatus.REFUSÉE }
+                it.invitations?.any { inv -> inv.employeeId == userId && inv.status == EStatus.REFUSÉE } == true
             }
         }
         submitList(filteredList)
@@ -78,21 +78,27 @@ class TrainingAdapter(private val userId: String) :
             dateTextView.text = "${training.startDate} - ${training.endDate}"
             descriptionTextView.text = training.description
 
-            val currentUserInvitation = training.invitations.find { it.employeeId == userId }
+            val currentUserInvitation = training.invitations?.find { it.employeeId == userId }
 
-            Log.d(
-                "TrainingAdapter",
-                "User: $userId, Training ID: ${training.id}, Invitation: ${currentUserInvitation?.id}, Status: ${currentUserInvitation?.status}"
-            )
+            Log.d("TrainingAdapter", "User: $userId, Training ID: ${training.id}, Invitation: ${currentUserInvitation?.id}, Status: ${currentUserInvitation?.status}")
+            Log.d("TrainingAdapter", "All invitation employeeIds for training ${training.id}: ${training.invitations?.map { it.employeeId }}")
+            training.invitations?.forEach {
+                Log.d("TrainingAdapter", "Invitation: id=${it.id}, employeeId='${it.employeeId}', status=${it.status}")
+            }
 
-            if (currentUserInvitation != null) {
-                acceptButton.visibility = View.VISIBLE
+            acceptButton.visibility = View.VISIBLE
+            if (currentUserInvitation == null) {
+                acceptButton.isEnabled = true
+                acceptButton.text = "Accept"
+                acceptButton.setOnClickListener {
+                    Toast.makeText(itemView.context, "You do not have an invitation for this training. Please contact your admin or wait to be invited.", Toast.LENGTH_SHORT).show()
+                }
+            } else {
                 when (currentUserInvitation.status) {
                     EStatus.PENDING -> {
                         acceptButton.isEnabled = true
                         acceptButton.text = "Accept"
                         acceptButton.setOnClickListener {
-                            // Pass training ID instead of invitation ID
                             confirmInvitation(currentUserInvitation.id)
                         }
                     }
@@ -109,21 +115,19 @@ class TrainingAdapter(private val userId: String) :
                         acceptButton.text = "Status: ${currentUserInvitation.status}"
                     }
                 }
-            } else {
-                acceptButton.visibility = View.GONE
             }
         }
 
-
-
-
         @RequiresApi(Build.VERSION_CODES.O)
         private fun confirmInvitation(invitationId: Long) {
+            Log.d("TrainingAdapter", "[DEBUG] confirmInvitation CALLED with invitationId=$invitationId")
             CoroutineScope(Dispatchers.IO).launch {
                 val context = itemView.context
                 val token = SharedPreferencesManager.getInstance(context).getAuthToken()
+                Log.d("TrainingAdapter", "[DEBUG] Retrieved token: ${token?.take(8)}... (length=${token?.length})")
 
                 if (token.isNullOrBlank()) {
+                    Log.e("TrainingAdapter", "[DEBUG] Token is null or blank!")
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, "Authentication token missing. Please log in again.", Toast.LENGTH_SHORT).show()
                     }
@@ -131,31 +135,44 @@ class TrainingAdapter(private val userId: String) :
                 }
 
                 withContext(Dispatchers.Main) {
+                    Log.d("TrainingAdapter", "[DEBUG] Disabling acceptButton and setting text to Processing...")
                     acceptButton.isEnabled = false
                     acceptButton.text = "Processing..."
                 }
 
                 try {
-                    Log.d("TrainingAdapter", "Calling confirmInvitation with invitationId: $invitationId")
-
+                    Log.d("TrainingAdapter", "[DEBUG] About to call RetrofitClient.trainingService.confirmInvitation with id=$invitationId")
                     val response = RetrofitClient.trainingService.confirmInvitation(
                         "Bearer $token",
                         invitationId
                     )
+                    Log.d("TrainingAdapter", "[DEBUG] Retrofit response: isSuccessful=${response.isSuccessful}, code=${response.code()}, message=${response.message()}")
 
                     withContext(Dispatchers.Main) {
                         if (response.isSuccessful) {
+                            Log.d("TrainingAdapter", "[DEBUG] Invitation confirmed successfully for invitationId=$invitationId")
                             Toast.makeText(context, "Training invitation accepted successfully!", Toast.LENGTH_SHORT).show()
                             acceptButton.text = "Already Accepted"
-
                             // Update the invitation status in the current item
                             val currentPosition = adapterPosition
+                            Log.d("TrainingAdapter", "[DEBUG] Adapter position: $currentPosition")
                             if (currentPosition != RecyclerView.NO_POSITION) {
                                 val currentTraining = getItem(currentPosition)
-                                currentTraining.invitations.find { it.id == invitationId }?.status = EStatus.CONFIRMED
+                                Log.d("TrainingAdapter", "[DEBUG] Current training: id=${currentTraining.id}, title=${currentTraining.title}")
+                                val invitation = currentTraining.invitations?.find { it.id == invitationId }
+                                Log.d("TrainingAdapter", "[DEBUG] Current invitation before update: $invitation")
+                                if (invitation != null) {
+                                    invitation.status = EStatus.CONFIRMED
+                                    Log.d("TrainingAdapter", "[DEBUG] Invitation status updated to CONFIRMED")
+                                } else {
+                                    Log.e("TrainingAdapter", "[DEBUG] Could not find invitation with id=$invitationId in currentTraining.invitations")
+                                }
                                 filterTrainings(currentFilter)
+                            } else {
+                                Log.e("TrainingAdapter", "[DEBUG] Invalid adapter position: $currentPosition")
                             }
                         } else {
+                            Log.e("TrainingAdapter", "[DEBUG] Response NOT successful. code=${response.code()} body=${response.errorBody()?.string()} ")
                             acceptButton.isEnabled = true
                             acceptButton.text = "Accept"
 
@@ -177,15 +194,17 @@ class TrainingAdapter(private val userId: String) :
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e("TrainingAdapter", "Error confirming invitation", e)
+                    Log.e("TrainingAdapter", "[DEBUG] Exception thrown in confirmInvitation", e)
                     withContext(Dispatchers.Main) {
                         acceptButton.isEnabled = true
                         acceptButton.text = "Accept"
                         Toast.makeText(context, "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
+                Log.d("TrainingAdapter", "[DEBUG] confirmInvitation END for invitationId=$invitationId")
             }
-        }}
+        }
+    }
 
     class TrainingDiffCallback : DiffUtil.ItemCallback<TrainingResponseDTO>() {
         override fun areItemsTheSame(oldItem: TrainingResponseDTO, newItem: TrainingResponseDTO): Boolean {

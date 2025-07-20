@@ -90,11 +90,23 @@ class DoctorListFragment : Fragment() {
             return
         }
 
-        // Convert selectedTime to proper ISO format (e.g., "2025-06-20T10:00:00")
-        val formattedDateTime = "${doctor.visitDate}T$selectedTime"
+        // Ensure selectedTime is in HH:mm:ss format
+        val timeParts = selectedTime.split(":")
+        val formattedTime = if (timeParts.size == 2) {
+            selectedTime + ":00"
+        } else if (timeParts.size == 3) {
+            selectedTime
+        } else {
+            throw IllegalArgumentException("Invalid time format: $selectedTime")
+        }
+        val formattedDateTime = "${doctor.visitDate}T$formattedTime"
+
+        Log.e("AppointmentDebug", "Selected slot: $selectedTime (formatted: $formattedTime)")
+        Log.e("AppointmentDebug", "Full ISO slot sent: $formattedDateTime")
+        Log.e("AppointmentDebug", "Visit start: ${doctor.startTime}, end: ${doctor.endTime}, visitDate: ${doctor.visitDate}")
 
         val appointmentRequest = AppointmentRequest(
-            medicalVisitId = doctor.id, // assuming doctor has `id: Long`
+            medicalVisitId = doctor.id,
             timeSlot = formattedDateTime
         )
 

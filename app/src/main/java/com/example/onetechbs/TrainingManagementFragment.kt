@@ -248,12 +248,12 @@ class TrainingManagementFragment : Fragment() {
         }
     }
 
-    private fun updateStatistics(trainings: List<TrainingResponseDTO>) {
+    private fun updateStatistics(trainings: List<TrainingResponseDTO>?) {
         try {
-            val totalTrainings = trainings.size
-            val activeTrainings = trainings.count { training ->
-                training.invitations.any { it.status.name == "PENDING" }
-            }
+            val totalTrainings = trainings?.size ?: 0
+            val activeTrainings = trainings?.count { training ->
+                training.invitations?.any { it.status?.name == "PENDING" } == true
+            } ?: 0
 
             binding.totalTrainingsTextView.text = "Total Trainings: $totalTrainings"
             binding.activeTrainingsTextView.text = "Active Trainings: $activeTrainings"
@@ -263,18 +263,19 @@ class TrainingManagementFragment : Fragment() {
         }
     }
 
-    private fun showTrainingDetails(training: TrainingResponseDTO) {
-        val acceptedCount = training.invitations.count { it.status.name == "CONFIRMED" }
-        val pendingCount = training.invitations.count { it.status.name == "PENDING" }
+    private fun showTrainingDetails(training: TrainingResponseDTO?) {
+        val acceptedCount = training?.invitations?.count { it.status?.name == "CONFIRMED" } ?: 0
+        val pendingCount = training?.invitations?.count { it.status?.name == "PENDING" } ?: 0
+        val totalInvitations = training?.invitations?.size ?: 0
 
         val message = """
-            Title: ${training.title}
-            Department: ${training.department}
-            Date: ${training.startDate} - ${training.endDate}
-            Created by: ${training.createdBy}
-            Created at: ${training.createdAt}
+            Title: ${training?.title ?: "N/A"}
+            Department: ${training?.department ?: "N/A"}
+            Date: ${training?.startDate ?: "N/A"} - ${training?.endDate ?: "N/A"}
+            Created by: ${training?.createdBy ?: "N/A"}
+            Created at: ${training?.createdAt ?: "N/A"}
             
-            Total Invitations: ${training.invitations.size}
+            Total Invitations: $totalInvitations
             Accepted: $acceptedCount
             Pending: $pendingCount
         """.trimIndent()

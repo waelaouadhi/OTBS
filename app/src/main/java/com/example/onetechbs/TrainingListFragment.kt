@@ -3,6 +3,7 @@ package com.example.onetechbs
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -81,6 +82,14 @@ class TrainingListFragment : Fragment() {
                 call: Call<List<TrainingResponseDTO>>,
                 response: Response<List<TrainingResponseDTO>>
             ) {
+                // Log the raw JSON response for backend debugging
+                try {
+                    val rawJson = response.errorBody()?.string() ?: response.body()?.toString()
+                    Log.d("TrainingAPI", "Raw trainings response: $rawJson")
+                } catch (e: Exception) {
+                    Log.e("TrainingAPI", "Failed to log raw trainings response", e)
+                }
+
                 progressBar.visibility = View.GONE
 
                 if (response.isSuccessful) {
@@ -139,7 +148,7 @@ class TrainingListFragment : Fragment() {
                 R.id.chipAll -> TrainingAdapter.TrainingFilter.ALL
                 R.id.chipAvailable -> TrainingAdapter.TrainingFilter.AVAILABLE
                 R.id.chipAccepted -> TrainingAdapter.TrainingFilter.ACCEPTED
-                R.id.chipRejected -> TrainingAdapter.TrainingFilter.REJECTED
+
                 else -> TrainingAdapter.TrainingFilter.ALL
             }
             trainingAdapter.filterTrainings(filter)

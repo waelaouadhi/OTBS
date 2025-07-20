@@ -83,5 +83,15 @@
         android:id="@+id/homefraFragment"
         android:name="com.example.onetechbs.Homefra"
         android:label="Home"
-        tools:layout="@layout/fragment_homefra"/>
+        tools:layout="@layout/fragment_homefra">
+        <action
+            android:id="@+id/action_homefraFragment_to_leaveListFragment"
+            app:destination="@id/leaveListFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/leaveListFragment"
+        android:name="com.example.onetechbs.LeaveListFragment"
+        android:label="Leave List"
+        tools:layout="@layout/fragment_leave_list" />
 </navigation>
