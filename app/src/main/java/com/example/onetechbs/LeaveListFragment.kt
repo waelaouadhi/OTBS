@@ -30,7 +30,7 @@ class LeaveListFragment : Fragment() {
     
     private lateinit var leaveListAdapter: LeaveListAdapter
     private val leaveList = mutableListOf<LeaveResponse>()
-
+    
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
