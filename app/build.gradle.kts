@@ -117,6 +117,9 @@ dependencies {
     implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
     implementation ("com.ramotion.foldingcell:folding-cell:1.2.3")
 
+    // Lottie Animation
+    implementation ("com.airbnb.android:lottie:6.4.0")
+
 
 
 }

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/text_dialog_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Approve Document Request"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginBottom="12dp" />
+
+    <EditText
+        android:id="@+id/edit_approve_notes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Add notes (optional)"
+        android:minHeight="48dp"
+        android:inputType="textMultiLine"
+        android:gravity="top|start"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/button_pick_file"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Attach Document (optional)"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/text_file_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No file selected"
+        android:textSize="12sp"
+        android:layout_marginBottom="16dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+        <Button
+            android:id="@+id/button_approve_confirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Approve"
+            android:layout_marginEnd="8dp"/>
+        <Button
+            android:id="@+id/button_approve_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"/>
+    </LinearLayout>
+</LinearLayout>

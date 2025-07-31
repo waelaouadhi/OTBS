@@ -32,8 +32,10 @@ class DoctorManagementFragment : Fragment() {
     private var _binding: FragmentDoctorManagementBinding? = null
     private val binding get() = _binding!!
     private lateinit var adapter: DoctorManagementAdapter
-private var allVisits: List<MedicalVisitResponse> = emptyList()
+    private var allVisits: List<MedicalVisitResponse> = emptyList()
     private val TAG = "DoctorManagementFrag"
+    private var searchJob: kotlinx.coroutines.Job? = null
+    private val searchDebounceTime = 300L // milliseconds
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -63,15 +65,8 @@ private var allVisits: List<MedicalVisitResponse> = emptyList()
         }
         loadVisits()
 
-        // --- Search Bar Logic ---
-        binding.searchEditText.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val query = s?.toString()?.trim() ?: ""
-                filterVisits(query)
-            }
-            override fun afterTextChanged(s: android.text.Editable?) {}
-        })
+        // --- Search Bar Setup ---
+        setupSearchView()
 
         // --- FAB Navigation ---
         binding.fabAddDoctor.setOnClickListener {
@@ -86,11 +81,28 @@ private var allVisits: List<MedicalVisitResponse> = emptyList()
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupRecyclerView() {
         adapter = DoctorManagementAdapter(
-            onDeleteClicked = { visit -> deleteVisit(visit.id) },
+            onDeleteClicked = { visit -> 
+                // Show confirmation dialog before deleting
+                showDeleteConfirmationDialog(visit)
+            },
             onCardClicked = { visit -> showDoctorAppointmentsDialog(visit) }
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter
+        
+        // Attach swipe-to-delete functionality
+        adapter.attachSwipeToDelete(binding.recyclerView)
+    }
+    
+    private fun showDeleteConfirmationDialog(visit: MedicalVisitResponse) {
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Delete Doctor Visit")
+            .setMessage("Are you sure you want to delete this doctor visit?")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteVisit(visit.id)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -158,6 +170,19 @@ private var allVisits: List<MedicalVisitResponse> = emptyList()
         binding.recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
         binding.emptyTitleTextView.visibility = if (isEmpty) View.VISIBLE else View.GONE
         binding.emptySubtitleTextView.visibility = if (isEmpty) View.VISIBLE else View.GONE
+        
+        // Show/hide swipe hint animation
+        try {
+            binding.swipeHintAnimation.visibility = if (isEmpty) View.VISIBLE else View.GONE
+            if (isEmpty) {
+                binding.swipeHintAnimation.playAnimation()
+            } else {
+                binding.swipeHintAnimation.cancelAnimation()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error with swipe hint animation", e)
+        }
+        
         // Only set this if the addDoctorButton exists in your layout
         try {
             binding.addDoctorButton?.visibility = if (isEmpty) View.VISIBLE else View.GONE
@@ -245,12 +270,68 @@ private var allVisits: List<MedicalVisitResponse> = emptyList()
         _binding = null
     }
 
+    // --- Search View Setup ---
+    private fun setupSearchView() {
+        // Clear any existing text change listeners
+        binding.searchEditText.clearFocus()
+        
+        // Set up search icon click listener
+        binding.searchEditText.setOnTouchListener { v, event ->
+            if (event.action == android.view.MotionEvent.ACTION_UP) {
+                if (event.rawX >= (binding.searchEditText.right - binding.searchEditText.compoundDrawables[2].bounds.width())) {
+                    // Clicked on the clear icon
+                    binding.searchEditText.text?.clear()
+                    filterVisits("")
+                    return@setOnTouchListener true
+                }
+            }
+            false
+        }
+        
+        // Set up search input listener with debounce
+        binding.searchEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                searchJob?.cancel()
+                searchJob = kotlinx.coroutines.MainScope().launch {
+                    s?.toString()?.let { query ->
+                        kotlinx.coroutines.delay(searchDebounceTime)
+                        if (query != binding.searchEditText.text.toString()) {
+                            return@launch
+                        }
+                        filterVisits(query.trim())
+                    } ?: filterVisits("")
+                }
+            }
+            
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+        
+        // Handle search action from keyboard
+        binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                val query = binding.searchEditText.text?.toString()?.trim() ?: ""
+                filterVisits(query)
+                // Hide keyboard after search
+                val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
+                binding.searchEditText.clearFocus()
+                true
+            } else {
+                false
+            }
+        }
+    }
+    
     // --- Filtering Logic for Search Bar ---
     private fun filterVisits(query: String) {
         val filtered = if (query.isEmpty()) {
             allVisits
         } else {
-            allVisits.filter { it.doctorName.contains(query, ignoreCase = true) }
+            allVisits.filter { 
+                it.doctorName.contains(query, ignoreCase = true)
+            }
         }
         adapter.submitList(filtered)
         updateEmptyState(filtered.isEmpty())

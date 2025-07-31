@@ -275,4 +275,74 @@ interface ApiService {
             return RetrofitClient.getClient(token).create(ApiService::class.java)
         }
     }
+
+
+    // ─────────────────────────────────────────────────────────────
+    // 📄 DOCUMENTS
+    // ─────────────────────────────────────────────────────────────
+
+    // 🔒 Internal Documents (admin or HR use)
+        @Multipart
+        @POST("api/v1/documents/internal")
+        suspend fun uploadInternalDocument(
+            @Part("data") data: RequestBody,
+            @Part document: MultipartBody.Part,
+            @Header("Authorization") token: String
+        ): Response<Void>
+
+    @GET("api/v1/documents/internal")
+    suspend fun getAllInternalDocuments(
+        @Header("Authorization") token: String
+    ): Response<List<InternalDocumentResponseDTO>>
+
+    @GET("api/v1/documents/internal/{id}")
+    suspend fun getInternalDocumentById(
+        @Path("id") id: Long,
+        @Header("Authorization") token: String
+    ): Response<InternalDocumentResponseDTO>
+
+
+    // 👤 Personal Documents (employee uploads)
+    @Multipart
+    @POST("api/v1/documents/personal")
+    suspend fun uploadPersonalDocument(
+        @Part("documentType") documentType: RequestBody,
+        @Part("notes") notes: RequestBody,
+        @Part document: MultipartBody.Part,
+        @Header("Authorization") token: String
+    ): Response<Void>
+
+    @POST("api/v1/documents/personal")
+    suspend fun sendPersonalDocumentRequest(
+        @Header("Authorization") token: String,
+        @Body request: PersonalDocumentRequestDTO
+    ): Response<Void>
+
+    @GET("api/v1/documents/personal")
+    suspend fun getPersonalDocuments(
+        @Header("Authorization") token: String
+    ): Response<List<PersonalDocumentResponseDTO>>
+
+    @GET("api/v1/documents/personal/received")
+    suspend fun getAllReceivedPersonalDocumentRequests(
+        @Header("Authorization") token: String
+    ): Response<List<PersonalDocumentResponseDTO>>
+
+    @PUT("api/v1/documents/personal/{id}/status")
+    suspend fun processPersonalDocument(
+        @Path("id") id: Long,
+        @Part("status") status: RequestBody,
+        @Part("notes") notes: RequestBody,
+        @Part document: MultipartBody.Part?,
+        @Header("Authorization") token: String
+    ): Response<PersonalDocumentProcessRequest>
+
+    @Multipart
+    @PUT("api/v1/documents/personal/{id}/process")
+    suspend fun processPersonalDocumentRequest(
+        @Path("id") id: Long,
+        @Part("data") data: RequestBody,
+        @Part document: MultipartBody.Part?,
+        @Header("Authorization") token: String
+    ): Response<Void>
 }

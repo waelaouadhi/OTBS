@@ -114,18 +114,12 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="end">
-                <!-- Employee buttons -->
+                <!-- Employee button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnApplyNow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Apply Now"/>
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSaveJob"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Save Job"
-                    android:layout_marginStart="12dp"/>
+                    android:text="Apply"/>
                     
                 <!-- HR buttons -->
                 <com.google.android.material.button.MaterialButton
@@ -152,7 +146,7 @@
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginTop="8dp"
-        android:background="#F2E8E2">
+        android:background="#FAFAFA">
 
         <LinearLayout
             android:layout_width="match_parent"

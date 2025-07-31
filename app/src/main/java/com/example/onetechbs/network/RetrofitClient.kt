@@ -36,14 +36,15 @@ object RetrofitClient {
      *  * and includes interceptors for adding authentication headers and logging requests and responses.
      *
      */
-    private const val AUTH_BASE_URL = "http://192.168.1.78:8081/"
-    private const val EMPLOYEE_BASE_URL = "http://192.168.1.78:8082/"
-    private const val LEAVE_BASE_URL = "http://192.168.1.78:8083/"
-    private const val TRAINING_BASE_URL = "http://192.168.1.78:8087/"
-    private const val NOTIFICATION_BASE_URL = "http://192.168.1.78:8086/"
-    private const val MED_BASE_URL = "http://192.168.1.78:8085/"
-    private const val RECRUITING_BASE_URL = "http://192.168.1.78:8088/"
-    private const val CONDIDATE_BASE_URL = "http://192.168.1.78:8089/"
+    private const val AUTH_BASE_URL = "http://172.31.4.102:8081/"
+    private const val EMPLOYEE_BASE_URL = "http://172.31.4.102:8082/"
+    private const val LEAVE_BASE_URL = "http://172.31.4.102:8083/"
+    private const val TRAINING_BASE_URL = "http://172.31.4.102:8087/"
+    private const val NOTIFICATION_BASE_URL = "http://172.31.4.102:8086/"
+    private const val MED_BASE_URL = "http://172.31.4.102:8085/"
+    private const val RECRUITING_BASE_URL = "http://172.31.4.102:8088/"
+    private const val CONDIDATE_BASE_URL = "http://172.31.4.102:8089/"
+    private const val DOCUMENTS_BASE_URL = "http://172.31.4.102:8093/"
 
 
     private const val CONNECT_TIMEOUT = 30L
@@ -99,6 +100,10 @@ object RetrofitClient {
         createRetrofit(AUTH_BASE_URL).create(ApiService::class.java)
     }
 
+    val documentsService: ApiService by lazy {
+        createRetrofit(DOCUMENTS_BASE_URL).create(ApiService::class.java)
+    }
+
     val employeeService: ApiService by lazy {
         createRetrofit(EMPLOYEE_BASE_URL).create(ApiService::class.java)
     }
@@ -145,6 +150,10 @@ object RetrofitClient {
 
     val candidateService: ApiService by lazy {
         createRetrofit(CONDIDATE_BASE_URL).create(ApiService::class.java)
+    }
+
+    val documentService: ApiService by lazy {
+        createRetrofit(DOCUMENTS_BASE_URL).create(ApiService::class.java)
     }
 
     val notificationService: ApiService by lazy {

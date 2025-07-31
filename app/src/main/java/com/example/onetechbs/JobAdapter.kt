@@ -70,12 +70,13 @@ class JobAdapter(
         private val qualificationsExpanded: LinearLayout = itemView.findViewById(R.id.qualificationsExpanded)
         private val roleExpanded: TextView = itemView.findViewById(R.id.roleExpanded)
         private val btnApplyNow: MaterialButton = itemView.findViewById(R.id.btnApplyNow)
-        private val btnSaveJob: MaterialButton = itemView.findViewById(R.id.btnSaveJob)
         private val btnViewApplicants: MaterialButton = itemView.findViewById(R.id.btnViewApplicants)
         private val btnEditJob: MaterialButton = itemView.findViewById(R.id.btnEditJob)
         private val btnCloseExpanded: MaterialButton = itemView.findViewById(R.id.btnCloseExpanded)
 
         fun bind(job: JobOfferResponseDTO, isHR: Boolean) {
+            // Reduce folding animation duration
+
             val shouldBeExpanded = adapterPosition == expandedPosition
             
             // Set the correct folding state based on accordion logic
@@ -136,27 +137,30 @@ class JobAdapter(
 
             // Set button visibility based on user role
             if (isHR) {
-                // Show HR buttons, hide employee buttons
+                // Show HR buttons, hide employee button
                 btnApplyNow.visibility = View.GONE
-                btnSaveJob.visibility = View.GONE
                 btnViewApplicants.visibility = View.VISIBLE
                 btnEditJob.visibility = View.VISIBLE
             } else {
-                // Show employee buttons, hide HR buttons
+                // Show employee button, hide HR buttons
                 btnApplyNow.visibility = View.VISIBLE
-                btnSaveJob.visibility = View.VISIBLE
                 btnViewApplicants.visibility = View.GONE
                 btnEditJob.visibility = View.GONE
             }
             
-            // Employee action buttons
+            // Employee action button
             btnApplyNow.setOnClickListener {
-                // TODO: Implement apply logic
-                android.widget.Toast.makeText(itemView.context, "Apply Now clicked", android.widget.Toast.LENGTH_SHORT).show()
-            }
-            btnSaveJob.setOnClickListener {
-                // TODO: Implement save job logic
-                android.widget.Toast.makeText(itemView.context, "Save Job clicked", android.widget.Toast.LENGTH_SHORT).show()
+                // Navigate to JobOfferDetailsFragment with job data
+                val fragment = com.example.onetechbs.JobOfferDetailsFragment.newInstance(job)
+                val activity = itemView.context as? androidx.fragment.app.FragmentActivity
+                activity?.supportFragmentManager?.beginTransaction()
+                    ?.replace(
+                        (itemView.rootView?.findViewById<ViewGroup>(android.R.id.content)?.id
+                            ?: activity.findViewById<ViewGroup>(android.R.id.content).id),
+                        fragment
+                    )
+                    ?.addToBackStack(null)
+                    ?.commit()
             }
             
             // HR action buttons

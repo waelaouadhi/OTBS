@@ -96,11 +96,25 @@
                 app:lottie_rawRes="@raw/empty_animation" />
             -->
 
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/swipeHintAnimation"
+                android:layout_width="200dp"
+                android:layout_height="150dp"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/emptyTitleTextView"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true"
+                app:lottie_rawRes="@raw/swipe_left_animation"
+                app:lottie_speed="1.0" />
+
             <TextView
                 android:id="@+id/emptyTitleTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="16dp"
                 android:text="@string/no_doctors_found"
                 android:textColor="@color/md_theme_primary"
                 android:textSize="20sp"
@@ -108,7 +122,7 @@
                 android:visibility="gone"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toBottomOf="@id/swipeHintAnimation" />
 
             <TextView
                 android:id="@+id/emptySubtitleTextView"

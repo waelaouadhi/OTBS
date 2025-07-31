@@ -83,6 +83,11 @@ class home : AppCompatActivity() {
                 R.id.nav_available_jobs -> replaceFragment(AvailableJobsFragment())
                 R.id.nav_document -> replaceFragment(DocumentFragment())
 
+                R.id.nav_internal_documents -> {
+                    if (getUserRole() == "HRD") replaceFragment(InternalDocumentsFragment())
+                    else showAccessDenied()
+                }
+
                 R.id.nav_internal_recruiting -> {
                     if (isHR()) replaceFragment(InternalRecruitingFragment())
                     else showAccessDenied()
@@ -104,6 +109,17 @@ class home : AppCompatActivity() {
                     if (isManager()) replaceFragment(HRLeaveManagementFragment())
                     else showAccessDenied()
                 }
+                R.id.nav_internal_documents_list -> {
+                    replaceFragment(InternalDocumentsListFragment())
+                }
+                R.id.nav_treat_personal_documents -> {
+                    val role = getUserRole()
+                    if (role == "HR" || role == "HRD") {
+                        replaceFragment(TreatPersonalDocumentsFragment())
+                    } else {
+                        showAccessDenied()
+                    }
+                }
             }
             drawerLayout.closeDrawers()
             true
@@ -117,10 +133,11 @@ class home : AppCompatActivity() {
 
         // Default: hide all role-specific items
         navMenu.findItem(R.id.nav_internal_recruiting)?.isVisible = false
-
+        navMenu.findItem(R.id.nav_internal_documents)?.isVisible = false
         navMenu.findItem(R.id.nav_doctor_management)?.isVisible = false
         navMenu.findItem(R.id.nav_training_management)?.isVisible = false
         navMenu.findItem(R.id.nav_leaves_management)?.isVisible = false
+        navMenu.findItem(R.id.nav_treat_personal_documents)?.isVisible = false
 
         // Bottom nav role-specific visibility
         binding.bottomNavigationView.menu.findItem(R.id.training)?.isVisible = role == "Manager"
@@ -129,11 +146,14 @@ class home : AppCompatActivity() {
         // Show items based on role
         if (role == "HR") {
             navMenu.findItem(R.id.nav_internal_recruiting)?.isVisible = true
-
             navMenu.findItem(R.id.nav_doctor_management)?.isVisible = true
+            navMenu.findItem(R.id.nav_treat_personal_documents)?.isVisible = true
         } else if (role == "Manager") {
             navMenu.findItem(R.id.nav_training_management)?.isVisible = true
             navMenu.findItem(R.id.nav_leaves_management)?.isVisible = true
+        } else if (role == "HRD") {
+            navMenu.findItem(R.id.nav_internal_documents)?.isVisible = true
+            navMenu.findItem(R.id.nav_treat_personal_documents)?.isVisible = true
         }
     }
 

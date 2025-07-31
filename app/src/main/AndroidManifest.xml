@@ -72,6 +72,16 @@
             android:name=".ftp"
             android:exported="false" />
 
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.onetechbs.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- WebSocket Foreground Service declaration -->
         <service
             android:name=".websocket.WebSocketService"

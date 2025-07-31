@@ -39,6 +39,11 @@
             android:icon="@drawable/baseline_calendar_month_24"
             android:title="Leaves Manager" />
 
+        <item
+            android:id="@+id/nav_treat_personal_documents"
+            android:icon="@drawable/baseline_document_scanner_24"
+            android:title="Treat Personal Documents" />
+
         <!-- HR-specific -->
         <item
             android:id="@+id/nav_internal_recruiting"
@@ -63,6 +68,15 @@
             android:id="@+id/nav_document"
             android:icon="@drawable/baseline_document_scanner_24"
             android:title="Document" />
+
+        <item
+            android:id="@+id/nav_internal_documents"
+            android:icon="@drawable/baseline_document_scanner_24"
+            android:title="Internal Documents" />
+        <item
+            android:id="@+id/nav_internal_documents_list"
+            android:icon="@drawable/baseline_list_alt_24"
+            android:title="Internal Documents List" />
 
     </group>
 
