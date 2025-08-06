@@ -166,4 +166,5 @@
     <!-- Availability Colors -->
     <color name="available_color">#4CAF50</color>
     <color name="unavailable_color">#F44336</color>
+    <color name="teal_700">#018786</color>
 </resources>

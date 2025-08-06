@@ -1,10 +1,12 @@
 package com.example.onetechbs
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat.startActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
@@ -72,8 +74,14 @@ class home : AppCompatActivity() {
     }
 
     private fun setupDrawerNavigation() {
+        // Set initial selected item
+        navigationView.menu.findItem(R.id.nav_home)?.isChecked = true
+        
         navigationView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
+    R.id.nav_logout -> {
+        logoutUser()
+    }
                 R.id.nav_profile -> replaceFragment(ProfileFragment())
                 R.id.nav_home -> replaceFragment(Homefra())
                 R.id.nav_leaves -> replaceFragment(LeaveListFragment())
@@ -82,6 +90,7 @@ class home : AppCompatActivity() {
                 R.id.nav_notification -> replaceFragment(NotificationFragment())
                 R.id.nav_available_jobs -> replaceFragment(AvailableJobsFragment())
                 R.id.nav_document -> replaceFragment(DocumentFragment())
+                R.id.nav_course_list -> replaceFragment(CoursesListFragment())
 
                 R.id.nav_internal_documents -> {
                     if (getUserRole() == "HRD") replaceFragment(InternalDocumentsFragment())
@@ -93,10 +102,37 @@ class home : AppCompatActivity() {
                     else showAccessDenied()
                 }
 
+                R.id.nav_course_propositions -> {
+                    if (isManager()) replaceFragment(TrainingCoursePropositionsFragment())
+                    else showAccessDenied()
+                }
+                R.id.nav_course_propositions_list -> {
+                    val role = getUserRole()
+                    if (role == "Manager" || role == "HRD") {
+                        replaceFragment(TrainingCoursePropositionsListFragment())
+                    } else {
+                        showAccessDenied()
+                    }
+            }
+                R.id.nav_enrollments -> {
+                    val role = getUserRole()
+                    if (role == "Manager" || role == "HRD") {
+                        replaceFragment(EnrollmentsListFragment())
+                    } else {
+                        showAccessDenied()
+                    }
+                }
 
 
                 R.id.nav_doctor_management -> {
                     if (isHR()) replaceFragment(DoctorManagementFragment())
+                    else showAccessDenied()
+                }
+                R.id.nav_create_course -> {
+
+                    val role = getUserRole()
+                    if (role == "HRD")
+                        replaceFragment(CreateCourseFragment())
                     else showAccessDenied()
                 }
 
@@ -210,4 +246,28 @@ class home : AppCompatActivity() {
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
         }
     }
-}
+    private fun logoutUser() {
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        builder.setTitle("Logout")
+        builder.setMessage("Are you sure you want to logout?")
+
+        builder.setPositiveButton("Yes") { dialog, _ ->
+            // Clear session and navigate to login
+            val prefs = getSharedPreferences("auth", Context.MODE_PRIVATE)
+            prefs.edit().clear().apply()
+
+            Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
+
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.dismiss()
+        }
+
+        builder.show()
+    }
+    }

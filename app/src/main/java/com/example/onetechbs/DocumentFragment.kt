@@ -54,7 +54,7 @@ class DocumentFragment : Fragment() {
         binding.spinnerDocuments.adapter = adapter
 
         // 2. Set up RecyclerView for personal documents
-        val documentAdapter = PersonalDocumentAdapter(emptyList())
+        val documentAdapter = PersonalDocumentAdapter(emptyList(), this::downloadDocument)
         binding.recyclerPersonalDocuments.adapter = documentAdapter
         binding.recyclerPersonalDocuments.setHasFixedSize(true)
         binding.recyclerPersonalDocuments.layoutManager =
@@ -162,6 +162,54 @@ class DocumentFragment : Fragment() {
             }
         }
     }
+
+    // Function to handle document download
+    private fun downloadDocument(doc: com.example.onetechbs.db.PersonalDocumentResponseDTO) {
+        android.util.Log.d("DownloadDebug", "downloadDocument CALLED for docId=${doc.id}, url=${doc.document}")
+        Toast.makeText(requireContext(), "Download button pressed", Toast.LENGTH_SHORT).show()
+        try {
+            val base64 = doc.document
+            if (base64.isNullOrEmpty()) {
+                android.util.Log.e("DownloadDebug", "No document data found for docId=${doc.id}")
+                Toast.makeText(requireContext(), "No document data found.", Toast.LENGTH_SHORT).show()
+                return
+            }
+            // Prompt user for file type: PDF or DOC
+            val fileTypes = arrayOf("PDF", "DOC")
+            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Choose file type to save:")
+                .setItems(fileTypes) { _, which ->
+                    val ext = if (which == 0) "pdf" else "doc"
+                    val fileName = "${doc.documentType.name}_${doc.id}.$ext"
+                    val success = saveBase64ToFile(base64, fileName)
+                    if (success != null) {
+                        Toast.makeText(requireContext(), "Saved as ${success.absolutePath}", Toast.LENGTH_LONG).show()
+                        android.util.Log.d("DownloadDebug", "File saved: ${success.absolutePath}")
+                    } else {
+                        Toast.makeText(requireContext(), "Failed to save file.", Toast.LENGTH_LONG).show()
+                        android.util.Log.e("DownloadDebug", "Failed to save file for docId=${doc.id}")
+                    }
+                }
+                .show()
+        } catch (e: Exception) {
+            android.util.Log.e("DownloadDebug", "Exception in downloadDocument: ${e.localizedMessage}", e)
+            Toast.makeText(requireContext(), "Download failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun saveBase64ToFile(base64: String, fileName: String): java.io.File? {
+        return try {
+            val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
+            val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+            val file = java.io.File(downloadsDir, fileName)
+            java.io.FileOutputStream(file).use { it.write(bytes) }
+            file
+        } catch (e: Exception) {
+            android.util.Log.e("DownloadDebug", "Failed to save file: ${e.localizedMessage}", e)
+            null
+        }
+    }
+
     override fun onDestroyView() {
         // Re-enable the button if it exists in the binding
         _binding?.buttonRequestDocument?.isEnabled = true

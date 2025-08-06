@@ -40,4 +40,12 @@
         android:textSize="12sp"
         android:layout_marginTop="2dp" />
 
+    <Button
+        android:id="@+id/button_download"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Download"
+        android:layout_gravity="end"
+        android:layout_marginTop="8dp" />
+
 </LinearLayout>

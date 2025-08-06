@@ -3,93 +3,127 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
-    <!-- Home remains uncheckable so no drawer item appears selected when on Home -->
+    <!-- HOME -->
     <item
         android:id="@+id/nav_home"
         android:icon="@drawable/outline_home_24"
         android:title="Home"
         android:checkable="false" />
 
-    <!-- All other items are mutually exclusive (single choice) -->
-    <group android:checkableBehavior="single">
+    <!-- 👤 Account -->
+    <item android:title="Account">
+        <menu>
+            <item
+                android:id="@+id/nav_profile"
+                android:icon="@drawable/ic_person"
+                android:title="Profile" />
+            <item
+                android:id="@+id/nav_leaves"
+                android:icon="@drawable/luggage_30"
+                android:title="Leaves" />
+            <item
+                android:id="@+id/nav_available_jobs"
+                android:icon="@drawable/baseline_work_24"
+                android:title="Available Jobs" />
+        </menu>
+    </item>
 
-        <item
-            android:id="@+id/nav_profile"
-            android:icon="@drawable/baseline_accessibility_new_24"
-            android:title="Profile" />
-        <item
-            android:id="@+id/nav_leaves"
-            android:icon="@drawable/baseline_holiday_village_24"
-            android:title="Leaves" />
-        <item
-            android:id="@+id/nav_training"
-            android:icon="@drawable/baseline_cast_for_education_24"
-            android:title="Trainings" />
-        <item
-            android:id="@+id/nav_doctor"
-            android:icon="@drawable/baseline_bloodtype_24"
-            android:title="Doctor" />
+    <!-- 🏥 Medical -->
+    <item android:title="Medical">
+        <menu>
+            <item
+                android:id="@+id/nav_doctor"
+                android:icon="@drawable/aed_30"
+                android:title="Doctor" />
+            <item
+                android:id="@+id/nav_doctor_management"
+                android:icon="@drawable/health_book_30"
+                android:title="Doctor Management" />
+        </menu>
+    </item>
 
-        <item
-            android:id="@+id/nav_doctor_management"
-            android:icon="@drawable/baseline_bloodtype_24"
-            android:title="Doctor Managment" />
-        <item
-            android:id="@+id/nav_leaves_management"
-            android:icon="@drawable/baseline_calendar_month_24"
-            android:title="Leaves Manager" />
-
-        <item
-            android:id="@+id/nav_treat_personal_documents"
-            android:icon="@drawable/baseline_document_scanner_24"
-            android:title="Treat Personal Documents" />
-
-        <!-- HR-specific -->
-        <item
-            android:id="@+id/nav_internal_recruiting"
-            android:icon="@drawable/baseline_work_outline_24"
-            android:title="Internal Recruiting"
-            />
-
-        <!-- Employee + Manager -->
-        <item
-            android:id="@+id/nav_available_jobs"
-            android:icon="@drawable/baseline_work_24"
-            android:title="Available Jobs"
-             />
-
-
+    <!-- 🧑‍🏫 Training -->
+    <item android:title="Training">
+        <menu>
+            <item
+                android:id="@+id/nav_training"
+                android:icon="@drawable/baseline_cast_for_education_24"
+                android:title="Trainings" />
+            <item
+                android:id="@+id/nav_enrollments"
+                android:icon="@drawable/baseline_cast_for_education_24"
+                android:title="Enrollments" />
             <item
                 android:id="@+id/nav_training_management"
                 android:icon="@drawable/ic_training_management"
                 android:title="Training Management" />
+            <item
+                android:id="@+id/nav_course_propositions"
+                android:icon="@drawable/baseline_add_24"
+                android:title="Course Propositions" />
+            <item
+                android:id="@+id/nav_course_propositions_list"
+                android:icon="@drawable/baseline_account_balance_24"
+                android:title="Course Propositions" />
+            <item
+                android:id="@+id/nav_course_list"
+                android:icon="@drawable/baseline_account_balance_24"
+                android:title="Course List" />
+            <item
+                android:id="@+id/nav_create_course"
+                android:icon="@drawable/baseline_add_24"
+                android:title="Create Course" />
+        </menu>
+    </item>
 
-        <item
-            android:id="@+id/nav_document"
-            android:icon="@drawable/baseline_document_scanner_24"
-            android:title="Document" />
+    <!-- 📂 Documents -->
+    <item android:title="Documents">
+        <menu>
+            <item
+                android:id="@+id/nav_document"
+                android:icon="@drawable/baseline_document_scanner_24"
+                android:title="Documents" />
+            <item
+                android:id="@+id/nav_internal_documents"
+                android:icon="@drawable/baseline_document_scanner_24"
+                android:title="Internal Documents" />
+            <item
+                android:id="@+id/nav_internal_documents_list"
+                android:icon="@drawable/baseline_list_alt_24"
+                android:title="Internal Documents List" />
+            <item
+                android:id="@+id/nav_treat_personal_documents"
+                android:icon="@drawable/baseline_document_scanner_24"
+                android:title="Treat Personal Documents" />
+        </menu>
+    </item>
 
-        <item
-            android:id="@+id/nav_internal_documents"
-            android:icon="@drawable/baseline_document_scanner_24"
-            android:title="Internal Documents" />
-        <item
-            android:id="@+id/nav_internal_documents_list"
-            android:icon="@drawable/baseline_list_alt_24"
-            android:title="Internal Documents List" />
+    <!-- 🛠 Management -->
+    <item android:title="Management">
+        <menu>
+            <item
+                android:id="@+id/nav_internal_recruiting"
+                android:icon="@drawable/training_30"
+                android:title="Internal Recruiting" />
+            <item
+                android:id="@+id/nav_leaves_management"
+                android:icon="@drawable/baseline_calendar_month_24"
+                android:title="Leaves Manager" />
+        </menu>
+    </item>
 
-    </group>
-
+    <!-- 🔔 General -->
     <item android:title="More">
         <menu>
             <item
                 android:id="@+id/nav_notification"
                 android:icon="@drawable/baseline_circle_notifications_24"
-                android:title="About" />
+                android:title="Notifications" />
             <item
                 android:id="@+id/nav_logout"
-                android:icon="@drawable/baseline_assist_walker_24"
+                android:icon="@drawable/ic_arrow_back"
                 android:title="Logout" />
         </menu>
     </item>
+
 </menu>

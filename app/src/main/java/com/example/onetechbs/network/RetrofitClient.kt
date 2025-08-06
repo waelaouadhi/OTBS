@@ -36,15 +36,15 @@ object RetrofitClient {
      *  * and includes interceptors for adding authentication headers and logging requests and responses.
      *
      */
-    private const val AUTH_BASE_URL = "http://172.31.4.102:8081/"
-    private const val EMPLOYEE_BASE_URL = "http://172.31.4.102:8082/"
-    private const val LEAVE_BASE_URL = "http://172.31.4.102:8083/"
-    private const val TRAINING_BASE_URL = "http://172.31.4.102:8087/"
-    private const val NOTIFICATION_BASE_URL = "http://172.31.4.102:8086/"
-    private const val MED_BASE_URL = "http://172.31.4.102:8085/"
-    private const val RECRUITING_BASE_URL = "http://172.31.4.102:8088/"
-    private const val CONDIDATE_BASE_URL = "http://172.31.4.102:8089/"
-    private const val DOCUMENTS_BASE_URL = "http://172.31.4.102:8093/"
+    private const val AUTH_BASE_URL = "http://172.31.4.218:8081/"
+    private const val EMPLOYEE_BASE_URL = "http://172.31.4.218:8082/"
+    private const val LEAVE_BASE_URL = "http://172.31.4.218:8083/"
+    private const val TRAINING_BASE_URL = "http://172.31.4.218:8087/"
+    private const val NOTIFICATION_BASE_URL = "http://172.31.4.218:8086/"
+    private const val MED_BASE_URL = "http://172.31.4.218:8085/"
+    private const val RECRUITING_BASE_URL = "http://172.31.4.218:8087/"
+    private const val CONDIDATE_BASE_URL = "http://172.31.4.218:8089/"
+    private const val DOCUMENTS_BASE_URL = "http://172.31.4.218:8093/"
 
 
     private const val CONNECT_TIMEOUT = 30L
@@ -87,6 +87,7 @@ object RetrofitClient {
         val gson = GsonBuilder()
             .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
             .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .registerTypeAdapter(java.time.Instant::class.java, com.example.onetechbs.util.InstantAdapter())
             .create()
 
         return Retrofit.Builder()
@@ -186,6 +187,7 @@ object RetrofitClient {
         val gson = GsonBuilder()
             .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
             .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .registerTypeAdapter(java.time.Instant::class.java, com.example.onetechbs.util.InstantAdapter())
             .create()
 
         val okHttpClient = OkHttpClient.Builder()
@@ -237,13 +239,56 @@ object RetrofitClient {
             .retryOnConnectionFailure(true)
             .build()
 
+        val gson = GsonBuilder()
+            .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .registerTypeAdapter(java.time.Instant::class.java, com.example.onetechbs.util.InstantAdapter())
+            .create()
+
         return Retrofit.Builder()
-            .baseUrl(RECRUITING_BASE_URL)
+            .baseUrl(TRAINING_BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(ApiService::class.java)
     }
+    suspend fun proposeCourseProposition(context: Context, request: com.example.onetechbs.db.CoursePropositionRequestDTO): retrofit2.Response<Void> {
+        val prefs = SharedPreferencesManager.getInstance(context)
+        val token = prefs.getAuthToken()
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val requestBuilder = chain.request().newBuilder()
+                if (!token.isNullOrEmpty()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                    Log.d("RetrofitClient", "✅ Token added to request: ${token.take(10)}...")
+                } else {
+                    Log.w("RetrofitClient", "⚠️ No auth token found")
+                }
+                chain.proceed(requestBuilder.build())
+            }
+            .addInterceptor(loggingInterceptor)
+            .build()
+
+        val gson = GsonBuilder()
+            .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .registerTypeAdapter(java.time.Instant::class.java, com.example.onetechbs.util.InstantAdapter())
+            .create()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl(TRAINING_BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+
+        val api = retrofit.create(ApiService::class.java)
+        return api.proposeCourse(request)
+    }
+
     fun getTrainingService(context: Context): TrainingService {
         val prefs = SharedPreferencesManager.getInstance(context)
         val token = prefs.getAuthToken()
@@ -268,6 +313,7 @@ object RetrofitClient {
         val gson = GsonBuilder()
             .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
             .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .registerTypeAdapter(java.time.Instant::class.java, com.example.onetechbs.util.InstantAdapter())
             .create()
 
         return Retrofit.Builder()

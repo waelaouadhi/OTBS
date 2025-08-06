@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/md_theme_background">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/md_theme_primary"
+        app:titleTextColor="@color/md_theme_onPrimary"
+        app:navigationIconTint="@color/md_theme_onPrimary" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Training Course Propositions"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="@color/md_theme_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Course Title *"
+                android:textColor="@color/md_theme_onBackground"
+                android:layout_marginTop="16dp" />
+
+            <EditText
+                android:id="@+id/inputCourseTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter course title"
+                android:backgroundTint="@color/md_theme_primary"
+                android:textColor="@color/md_theme_onBackground" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Description *"
+                android:textColor="@color/md_theme_onBackground"
+                android:layout_marginTop="12dp" />
+
+            <EditText
+                android:id="@+id/inputDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter description"
+                android:minLines="3"
+                android:gravity="top"
+                android:inputType="textMultiLine"
+                android:backgroundTint="@color/md_theme_primary"
+                android:textColor="@color/md_theme_onBackground" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Justification *"
+                android:textColor="@color/md_theme_onBackground"
+                android:layout_marginTop="12dp" />
+
+            <EditText
+                android:id="@+id/inputJustification"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter justification"
+                android:minLines="2"
+                android:gravity="top"
+                android:inputType="textMultiLine"
+                android:backgroundTint="@color/md_theme_primary"
+                android:textColor="@color/md_theme_onBackground" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Expected Outcomes *"
+                android:textColor="@color/md_theme_onBackground"
+                android:layout_marginTop="12dp" />
+
+            <EditText
+                android:id="@+id/inputExpectedOutcomes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter expected outcomes"
+                android:minLines="2"
+                android:gravity="top"
+                android:inputType="textMultiLine"
+                android:backgroundTint="@color/md_theme_primary"
+                android:textColor="@color/md_theme_onBackground" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Preferred Provider *"
+                android:textColor="@color/md_theme_onBackground"
+                android:layout_marginTop="12dp" />
+
+            <EditText
+                android:id="@+id/inputPreferredProvider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter preferred provider"
+                android:backgroundTint="@color/md_theme_primary"
+                android:textColor="@color/md_theme_onBackground" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Certification Required *"
+                android:textColor="@color/md_theme_onBackground"
+                android:layout_marginTop="12dp" />
+
+            <RadioGroup
+                android:id="@+id/radioGroupCertification"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/radioYes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Yes"
+                    android:buttonTint="@color/md_theme_primary"
+                    android:textColor="@color/md_theme_onBackground" />
+
+                <RadioButton
+                    android:id="@+id/radioNo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="No"
+                    android:buttonTint="@color/md_theme_primary"
+                    android:textColor="@color/md_theme_onBackground" />
+            </RadioGroup>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:layout_marginTop="24dp">
+
+                <Button
+                    android:id="@+id/btnCancel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancel"
+                    android:backgroundTint="@color/md_theme_secondary"
+                    android:textColor="@color/md_theme_onSecondary"
+                    android:layout_marginEnd="12dp" />
+
+                <Button
+                    android:id="@+id/btnSubmit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Submit"
+                    android:backgroundTint="@color/md_theme_primary"
+                    android:textColor="@color/md_theme_onPrimary" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

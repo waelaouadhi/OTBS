@@ -113,6 +113,11 @@ class LoginActivity : AppCompatActivity() {
                                             putString("username", employee?.username)
                                             apply()
                                         }
+                                        // Save user role to SharedPreferencesManager for role-based UI
+                                        employee?.role?.let { role ->
+                                            SharedPreferencesManager.getInstance(this@LoginActivity).saveUserRole(role)
+                                            Log.d("LoginActivity", "Saved user role to SharedPreferencesManager: $role")
+                                        }
                                         Log.d("LoginActivity", "Starting WebSocketService with token: ${jwtResponse?.accessToken}")
                                         startWebSocketService(jwtResponse?.accessToken ?: "")
                                         startActivity(Intent(this@LoginActivity, home::class.java))

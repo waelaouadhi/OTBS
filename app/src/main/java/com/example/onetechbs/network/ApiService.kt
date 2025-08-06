@@ -10,6 +10,65 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface ApiService {
+    // List all enrollment requests (HR/HRD)
+    @GET("api/v1/trainings/requests")
+    suspend fun getAllTrainingRequests(@Header("Authorization") token: String): Response<List<com.example.onetechbs.db.TrainingRequestResponseDTO>>
+
+    // List enrollment requests for a course (HR/HRD)
+    @GET("api/v1/trainings/requests/course/{courseId}")
+    suspend fun getTrainingRequestsByCourseId(@Path("courseId") courseId: Long, @Header("Authorization") token: String): Response<List<com.example.onetechbs.db.TrainingRequestResponseDTO>>
+
+    // Approve enrollment (HR/HRD)
+    @PUT("api/v1/trainings/courses/{trainingRequestId}/approve")
+    suspend fun approveEnrollment(@Path("trainingRequestId") trainingRequestId: Long, @Header("Authorization") token: String): Response<Void>
+
+    // Reject enrollment (HR/HRD)
+    @PUT("api/v1/trainings/courses/{trainingRequestId}/reject")
+    suspend fun rejectEnrollment(@Path("trainingRequestId") trainingRequestId: Long, @Header("Authorization") token: String, @Body review: com.example.onetechbs.db.TrainingRequestReviewRequestDTO): Response<Void>
+    // Enroll in a course (Employee only)
+    @POST("api/v1/trainings/courses/{courseId}/enroll")
+    suspend fun enrollInCourse(
+        @Path("courseId") courseId: Long,
+        @Header("Authorization") token: String
+    ): retrofit2.Response<Void>
+    // List all courses
+    @GET("api/v1/trainings/courses")
+    suspend fun getAllCourses(@Header("Authorization") token: String): Response<List<com.example.onetechbs.db.CourseResponseDTO>>
+    // Create a course (HRD only)
+    @POST("api/v1/trainings/courses")
+    suspend fun createCourse(
+        @Header("Authorization") token: String,
+        @Body request: com.example.onetechbs.db.CourseRequestDTO
+    ): retrofit2.Response<Void>
+    // Propose a course
+    @POST("api/v1/trainings/courses/propose")
+    suspend fun proposeCourse(@Body request:CoursePropositionRequestDTO):Response<Void>
+
+    // List all course propositions
+    @GET("api/v1/trainings/courses/proposed")
+    suspend fun getAllCoursePropositions(@Header("Authorization") token: String): Response<List<CoursePropositionResponseDTO>>
+
+    // Approve a Course Proposition (HRD only)
+    @PUT("api/v1/trainings/courses/{coursePropositionId}/approveProposition")
+    suspend fun approveCourseProposition(
+        @Path("coursePropositionId") id: Long,
+        @Header("Authorization") token: String
+    ): Response<Void>
+
+    // Reject a Course Proposition (HRD only)
+    @PUT("api/v1/trainings/courses/{coursePropositionId}/rejectProposition")
+    suspend fun rejectCourseProposition(
+        @Path("coursePropositionId") id: Long,
+        @Header("Authorization") token: String
+    ): Response<Void>
+
+    // Update proposition status (approve/reject)
+    @PUT("api/v1/trainings/courses/propositions/{id}/status")
+    suspend fun updateCoursePropositionStatus(
+        @Path("id") id: Long,
+        @Query("status") status: String
+    ): Response<Void>
+
     /**
      * API Service interface for OneTechBS application.
      * Provides methods to interact with various endpoints for authentication,
