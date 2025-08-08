@@ -100,13 +100,14 @@ class LeaveListFragment : Fragment() {
                             startDate = leave.startDate,
                             endDate = leave.endDate,
                             leaveType = leave.leaveType,
-                            status = when (leave.status ?: EStatus.EN_ATTENTE) {
-    EStatus.EN_ATTENTE -> EStatus.EN_ATTENTE
-    EStatus.APPROUVÉE -> EStatus.APPROUVÉE
-    EStatus.REFUSÉE -> EStatus.REFUSÉE
-    EStatus.CONFIRMED -> EStatus.APPROUVÉE
-    EStatus.PENDING -> EStatus.EN_ATTENTE
-}
+                            status = when (leave.status ?: EStatus.PENDING) {
+                                EStatus.PENDING -> EStatus.PENDING
+                                EStatus.APPROVED -> EStatus.APPROVED
+                                EStatus.REJECTED -> EStatus.REJECTED
+                                EStatus.CANCELLED -> EStatus.CANCELLED
+                                else -> EStatus.PENDING
+                                
+                            }
                         )
                     }
                     leaveList.clear()

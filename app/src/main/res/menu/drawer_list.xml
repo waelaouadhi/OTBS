@@ -45,34 +45,38 @@
     <!-- 🧑‍🏫 Training -->
     <item android:title="Training">
         <menu>
-            <item
-                android:id="@+id/nav_training"
-                android:icon="@drawable/baseline_cast_for_education_24"
-                android:title="Trainings" />
+
             <item
                 android:id="@+id/nav_enrollments"
-                android:icon="@drawable/baseline_cast_for_education_24"
+                android:icon="@drawable/learning"
                 android:title="Enrollments" />
-            <item
-                android:id="@+id/nav_training_management"
-                android:icon="@drawable/ic_training_management"
-                android:title="Training Management" />
+
             <item
                 android:id="@+id/nav_course_propositions"
-                android:icon="@drawable/baseline_add_24"
+                android:icon="@drawable/learning50"
                 android:title="Course Propositions" />
             <item
                 android:id="@+id/nav_course_propositions_list"
-                android:icon="@drawable/baseline_account_balance_24"
-                android:title="Course Propositions" />
+                android:icon="@drawable/checklist"
+                android:title="Course Propositions List" />
             <item
                 android:id="@+id/nav_course_list"
-                android:icon="@drawable/baseline_account_balance_24"
+                android:icon="@drawable/books50"
                 android:title="Course List" />
             <item
                 android:id="@+id/nav_create_course"
                 android:icon="@drawable/baseline_add_24"
                 android:title="Create Course" />
+        </menu>
+    </item>
+
+    <!-- 🕒 Attendance -->
+    <item android:title="Attendance">
+        <menu>
+            <item
+                android:id="@+id/nav_attendance"
+                android:icon="@drawable/ic_attendance"
+                android:title="Attendance Management" />
         </menu>
     </item>
 

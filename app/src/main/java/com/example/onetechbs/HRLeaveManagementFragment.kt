@@ -33,6 +33,7 @@ class HRLeaveManagementFragment : Fragment() {
     private lateinit var adapter: LeaveRequestsAdapter
     private var allLeaves: List<Leave> = emptyList()
 
+    @Deprecated("Deprecated override")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -48,12 +49,7 @@ class HRLeaveManagementFragment : Fragment() {
 
         binding.toolbar.setNavigationIcon(R.drawable.ic_arrow_back)
         binding.toolbar.setNavigationOnClickListener {
-            try {
-                androidx.navigation.Navigation.findNavController(view)
-                    .popBackStack(R.id.homefraFragment, false)
-            } catch (e: Exception) {
-                requireActivity().onBackPressedDispatcher.onBackPressed()
-            }
+            requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
         setupRecyclerView()
@@ -66,9 +62,9 @@ class HRLeaveManagementFragment : Fragment() {
         binding.filterRadioGroup.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
                 R.id.radioAll -> filterLeaves(null)
-                R.id.radioPending -> filterLeaves(EStatus.EN_ATTENTE)
-                R.id.radioRejected -> filterLeaves(EStatus.REFUSÉE)
-                R.id.radioAccepted -> filterLeaves(EStatus.APPROUVÉE)
+                R.id.radioPending -> filterLeaves(EStatus.PENDING)
+                R.id.radioRejected -> filterLeaves(EStatus.REJECTED)
+                R.id.radioAccepted -> filterLeaves(EStatus.APPROVED)
             }
         }
     }
@@ -82,9 +78,9 @@ class HRLeaveManagementFragment : Fragment() {
     private fun applyCurrentFilter() {
         when (binding.filterRadioGroup.checkedRadioButtonId) {
             R.id.radioAll -> filterLeaves(null)
-            R.id.radioPending -> filterLeaves(EStatus.EN_ATTENTE)
-            R.id.radioRejected -> filterLeaves(EStatus.REFUSÉE)
-            R.id.radioAccepted -> filterLeaves(EStatus.APPROUVÉE)
+            R.id.radioPending -> filterLeaves(EStatus.PENDING)
+            R.id.radioRejected -> filterLeaves(EStatus.REJECTED)
+            R.id.radioAccepted -> filterLeaves(EStatus.APPROVED)
         }
     }
 
@@ -132,30 +128,29 @@ class HRLeaveManagementFragment : Fragment() {
                     val leaveResponseList = response.body() ?: emptyList()
 
                     allLeaves = leaveResponseList
-    .filter { it.id != null && it.startDate != null && it.endDate != null && it.name != null }
-    .map { responseItem ->
-        Leave(
-            id = responseItem.id,
-            userDn = responseItem.name ?: "Unknown",
-            startDate = responseItem.startDate,
-            endDate = responseItem.endDate,
-            leaveType = responseItem.leaveType,
-            status = when (responseItem.status) {
-    EStatus.EN_ATTENTE -> EStatus.EN_ATTENTE
-    EStatus.APPROUVÉE -> EStatus.APPROUVÉE
-    EStatus.REFUSÉE -> EStatus.REFUSÉE
-    EStatus.PENDING -> EStatus.EN_ATTENTE // fallback mapping
-    EStatus.CONFIRMED -> EStatus.APPROUVÉE // fallback mapping
-    else -> EStatus.EN_ATTENTE // default fallback
-},
-            startTime = null,
-            endTime = null,
-            attachment = null,
-            createdAt = null,
-            updatedAt = null
-        )
-    }
-    .sortedByDescending { it.startDate }
+                        
+                        .map { responseItem ->
+                            Leave(
+                                id = responseItem.id,
+                                userDn = responseItem.name ?: "Unknown",
+                                startDate = responseItem.startDate,
+                                endDate = responseItem.endDate,
+                                leaveType = responseItem.leaveType,
+                                status = when (responseItem.status?.toString()?.uppercase()) {
+                                    "EN_ATTENTE", "PENDING" -> EStatus.PENDING
+                                    "APPROUVÉE", "APPROVED" -> EStatus.APPROVED
+                                    "REFUSÉE", "REJECTED" -> EStatus.REJECTED
+                                    "ANNULÉE", "CANCELLED" -> EStatus.CANCELLED
+                                    else -> EStatus.PENDING
+                                },
+                                startTime = null,
+                                endTime = null,
+                                attachment = responseItem.attachment,
+                                createdAt = null,
+                                updatedAt = null
+                            )
+                        }
+                        .sortedByDescending { it.startDate }
 
                     applyCurrentFilter()
                 } else {

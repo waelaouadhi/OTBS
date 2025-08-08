@@ -64,7 +64,7 @@ class DoctorListFragment : Fragment() {
         setupRecyclerView()
 
         setupSwipeRefresh()
-        setupFilterChips()
+//        setupFilterChips()
         setupRetryButton()
         fetchDoctorVisits()
     }
@@ -155,21 +155,21 @@ class DoctorListFragment : Fragment() {
         }
     }
 
-    private fun setupFilterChips() {
-        val doctors = listOf("dwael", "Dr. Smith", "Dr. Brown", "Dr. Davis", "Dr. Wilson")
-
-        doctors.forEach { doctorName ->
-            val chip = Chip(requireContext()).apply {
-                text = doctorName
-                isCheckable = true
-                setOnCheckedChangeListener { _, isChecked ->
-                    if (isChecked) selectedFilters.add(doctorName) else selectedFilters.remove(doctorName)
-                    filterDoctors()
-                }
-            }
-            binding.filterChipGroup.addView(chip)
-        }
-    }
+//    private fun setupFilterChips() {
+//        val doctors = listOf("dwael", "Dr. Smith", "Dr. Brown", "Dr. Davis", "Dr. Wilson")
+//
+//        doctors.forEach { doctorName ->
+//            val chip = Chip(requireContext()).apply {
+//                text = doctorName
+//                isCheckable = true
+//                setOnCheckedChangeListener { _, isChecked ->
+//                    if (isChecked) selectedFilters.add(doctorName) else selectedFilters.remove(doctorName)
+//                    filterDoctors()
+//                }
+//            }
+//            binding.filterChipGroup.addView(chip)
+//        }
+//    }
 
     private fun isFutureOrToday(dateStr: String): Boolean {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())

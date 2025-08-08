@@ -53,6 +53,9 @@ class TreatPersonalDocumentsFragment : Fragment() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.toolbar.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
         adapter = TreatPersonalDocumentsAdapter(
             onApprove = { doc -> showApproveDialog(doc) },
             onReject = { doc -> showRejectDialog(doc) },
@@ -90,7 +93,7 @@ class TreatPersonalDocumentsFragment : Fragment() {
                     }
                     .build()
                 val retrofit = retrofit2.Retrofit.Builder()
-                    .baseUrl("http://172.31.4.218:8093/") // Use your DOCUMENTS_BASE_URL
+                    .baseUrl("http://172.31.4.45:8093/") // Use your DOCUMENTS_BASE_URL
                     .client(okHttpClient)
                     .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
                     .build()
@@ -202,7 +205,7 @@ class TreatPersonalDocumentsFragment : Fragment() {
                     }
                     .build()
                 val retrofit = retrofit2.Retrofit.Builder()
-                    .baseUrl("http://172.31.4.218:8093/") // <-- Fixed: do not duplicate /api/v1/
+                    .baseUrl("http://172.31.4.45:8093/") // <-- Fixed: do not duplicate /api/v1/
                     .client(okHttpClient)
                     .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
                     .build()

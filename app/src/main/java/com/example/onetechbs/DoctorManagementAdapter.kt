@@ -15,17 +15,21 @@ import com.example.onetechbs.db.MedicalVisitResponse
 
 class DoctorManagementAdapter(
     private val onDeleteClicked: (MedicalVisitResponse) -> Unit,
+    private val onUpdateClicked: (MedicalVisitResponse) -> Unit,
     private val onCardClicked: (MedicalVisitResponse) -> Unit
 ) : RecyclerView.Adapter<DoctorManagementAdapter.VisitViewHolder>() {
 
     private val visits = mutableListOf<MedicalVisitResponse>()
-    private var swipeToDeleteCallback: SwipeToDeleteCallback? = null
+    private var swipeCallback: SwipeCallback? = null
     
-    fun attachSwipeToDelete(recyclerView: RecyclerView) {
-        swipeToDeleteCallback = SwipeToDeleteCallback(recyclerView.context) { position ->
-            onDeleteClicked(visits[position])
+    fun attachSwipeActions(recyclerView: RecyclerView) {
+        swipeCallback = SwipeCallback(recyclerView.context) { position, action ->
+            when (action) {
+                SwipeAction.DELETE -> onDeleteClicked(visits[position])
+                SwipeAction.UPDATE -> onUpdateClicked(visits[position])
+            }
         }
-        val itemTouchHelper = ItemTouchHelper(swipeToDeleteCallback!!)
+        val itemTouchHelper = ItemTouchHelper(swipeCallback!!)
         itemTouchHelper.attachToRecyclerView(recyclerView)
     }
 
@@ -71,13 +75,19 @@ class DoctorManagementAdapter(
         holder.bind(visits[position])
     }
 
-    private inner class SwipeToDeleteCallback(
+    enum class SwipeAction {
+        DELETE, UPDATE
+    }
+
+    private inner class SwipeCallback(
         context: android.content.Context,
-        private val onSwiped: (Int) -> Unit
+        private val onSwiped: (Int, SwipeAction) -> Unit
     ) : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
 
         private val deleteIcon = ContextCompat.getDrawable(context, R.drawable.baseline_delete_24)
-        private val background = ColorDrawable(Color.RED)
+        private val editIcon = ContextCompat.getDrawable(context, R.drawable.baseline_edit_24)
+        private val deleteBackground = ColorDrawable(Color.RED)
+        private val updateBackground = ColorDrawable(ContextCompat.getColor(context, R.color.colorPrimary))
         private val iconMargin = context.resources.getDimensionPixelSize(R.dimen.icon_margin)
 
         override fun onMove(
@@ -87,7 +97,8 @@ class DoctorManagementAdapter(
         ): Boolean = false
 
         override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-            onSwiped(viewHolder.adapterPosition)
+            val action = if (direction == ItemTouchHelper.LEFT) SwipeAction.DELETE else SwipeAction.UPDATE
+            onSwiped(viewHolder.adapterPosition, action)
         }
 
         override fun onChildDraw(
@@ -101,44 +112,48 @@ class DoctorManagementAdapter(
         ) {
             val itemView = viewHolder.itemView
 
-            // Draw red background
-            background.bounds = when {
-                dX > 0 -> { // Swiping right
-                    android.graphics.Rect(
+            when {
+                dX > 0 -> { // Swiping right - UPDATE
+                    // Draw blue background for update
+                    updateBackground.bounds = android.graphics.Rect(
                         itemView.left,
                         itemView.top,
                         itemView.left + dX.toInt(),
                         itemView.bottom
                     )
+                    updateBackground.draw(c)
+
+                    // Draw edit icon
+                    editIcon?.let { icon ->
+                        val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2
+                        val iconLeft = itemView.left + iconMargin
+                        val iconRight = iconLeft + icon.intrinsicWidth
+
+                        icon.setBounds(iconLeft, iconTop, iconRight, iconTop + icon.intrinsicHeight)
+                        icon.draw(c)
+                    }
                 }
-                dX < 0 -> { // Swiping left
-                    android.graphics.Rect(
+                dX < 0 -> { // Swiping left - DELETE
+                    // Draw red background for delete
+                    deleteBackground.bounds = android.graphics.Rect(
                         itemView.right + dX.toInt(),
                         itemView.top,
                         itemView.right,
                         itemView.bottom
                     )
+                    deleteBackground.draw(c)
+
+                    // Draw delete icon
+                    deleteIcon?.let { icon ->
+                        val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2
+                        val iconRight = itemView.right - iconMargin
+                        val iconLeft = iconRight - icon.intrinsicWidth
+
+                        icon.setBounds(iconLeft, iconTop, iconRight, iconTop + icon.intrinsicHeight)
+                        icon.draw(c)
+                    }
                 }
                 else -> return
-            }
-            background.draw(c)
-
-            // Draw delete icon
-            deleteIcon?.let { icon ->
-                val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2
-                val iconLeft: Int
-                val iconRight: Int
-
-                if (dX > 0) { // Swiping right
-                    iconLeft = itemView.left + iconMargin
-                    iconRight = iconLeft + icon.intrinsicWidth
-                } else { // Swiping left
-                    iconRight = itemView.right - iconMargin
-                    iconLeft = iconRight - icon.intrinsicWidth
-                }
-
-                icon.setBounds(iconLeft, iconTop, iconRight, iconTop + icon.intrinsicHeight)
-                icon.draw(c)
             }
 
             super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)

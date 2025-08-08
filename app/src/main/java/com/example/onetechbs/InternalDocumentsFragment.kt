@@ -62,6 +62,14 @@ class InternalDocumentsFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupUI() {
+        // Toolbar back navigation and title
+        binding.toolbar.title = "Internal Documents"
+        binding.toolbar.setTitleTextColor(android.graphics.Color.WHITE)
+        binding.toolbar.setNavigationIcon(com.google.android.material.R.drawable.abc_ic_ab_back_material)
+        binding.toolbar.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
+
         // Category Spinner
         val categories = EDocumentCategory.values().map { it.name }
         val categoryAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, categories)
@@ -93,7 +101,7 @@ class InternalDocumentsFragment : Fragment() {
 
         // Cancel Button
         binding.cancelButton.setOnClickListener {
-            clearForm()
+            requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
         // Submit Button

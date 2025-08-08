@@ -3,68 +3,135 @@
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    card_view:cardCornerRadius="10dp"
-    card_view:cardElevation="4dp">
+    android:layout_marginBottom="16dp"
+    android:foreground="?android:attr/selectableItemBackground"
+    card_view:cardCornerRadius="18dp"
+    card_view:cardElevation="8dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:background="@android:color/white">
 
-        <TextView
-            android:id="@+id/textViewCourseTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:text="Course Title" />
-
-        <TextView
-            android:id="@+id/textViewCourseDescription"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Description: "
-            android:layout_marginTop="4dp"/>
-
-        <TextView
-            android:id="@+id/textViewCourseCertification"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Certification: "
-            android:layout_marginTop="4dp"/>
-
-        <TextView
-            android:id="@+id/textViewCourseCost"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Cost: "
-            android:layout_marginTop="4dp"/>
-
+        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="end"
-            android:layout_marginTop="8dp">
+            android:background="@color/calendar_bg"
+            android:padding="14dp"
+            android:gravity="center_vertical">
 
-            <Button
-                android:id="@+id/btnEnrollApprove"
-                android:layout_width="wrap_content"
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_school"
+                android:contentDescription="Course icon"
+                android:tint="@android:color/white" />
+
+            <TextView
+                android:id="@+id/textViewCourseTitle"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Enroll"
-                android:backgroundTint="@color/teal_700"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="Course Title"
+                android:textStyle="bold"
+                android:textSize="20sp"
                 android:textColor="@android:color/white"
-                android:visibility="gone"/>
+                android:ellipsize="end"
+                android:maxLines="2" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/textViewCourseStatus"
-            android:layout_width="wrap_content"
+        <!-- Body -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textStyle="italic"
-            android:layout_marginTop="4dp"/>
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/textViewCourseDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Description: "
+                android:textColor="@android:color/black"
+                android:textSize="15sp"
+                android:maxLines="3"
+                android:ellipsize="end" />
+
+            <!-- Badges -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="10dp">
+
+                <TextView
+                    android:id="@+id/textViewCourseCertification"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Certification"
+                    android:background="@drawable/bg_badge_certified"
+                    android:textColor="@color/calendar_bg"
+                    android:textStyle="bold"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:textSize="13sp"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/textViewCourseCost"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cost: "
+                    android:background="@drawable/bg_badge_cost"
+                    android:textColor="@color/orange"
+                    android:textStyle="bold"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Status & Action -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp"
+                android:gravity="end|center_vertical">
+
+                <TextView
+                    android:id="@+id/textViewCourseStatus"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text=""
+                    android:textStyle="italic"
+                    android:textColor="@color/orange"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEnrollApprove"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Enroll"
+                    android:backgroundTint="#FFBC99"
+                    android:textColor="@android:color/white"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:insetLeft="12dp"
+                    android:insetRight="12dp"
+                    android:visibility="gone"
+                    android:layout_marginStart="8dp" />
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

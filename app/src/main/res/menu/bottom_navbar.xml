@@ -19,11 +19,7 @@
         android:id="@+id/profile"
         android:title="Profile"
         android:icon="@drawable/baseline_accessibility" />
-    <item
-        android:id="@+id/training"
-        android:icon="@drawable/ic_training2"
-        android:title="Training" />
-
+   
     <item
         android:id="@+id/notification"
         android:icon="@drawable/ic_notification"

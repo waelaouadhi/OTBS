@@ -8,6 +8,7 @@ import java.time.LocalDate
 
 class LeaveResponse(
     val id: Long,
+    @SerializedName("attachment") val attachment: String? = null,
     @SerializedName("Name") val name: String,
     @SerializedName("Department") val department: String,
     @SerializedName("startDate") val startDate: LocalDate,

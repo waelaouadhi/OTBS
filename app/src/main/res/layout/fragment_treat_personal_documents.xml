@@ -12,6 +12,7 @@
         android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
         android:title="Treat Personal Documents"
+        app:titleTextColor="@color/orange"
         android:titleTextColor="@color/black"
         app:navigationIcon="@drawable/ic_arrow_back" />
 

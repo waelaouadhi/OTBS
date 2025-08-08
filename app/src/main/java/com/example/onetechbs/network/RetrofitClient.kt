@@ -36,15 +36,15 @@ object RetrofitClient {
      *  * and includes interceptors for adding authentication headers and logging requests and responses.
      *
      */
-    private const val AUTH_BASE_URL = "http://172.31.4.218:8081/"
-    private const val EMPLOYEE_BASE_URL = "http://172.31.4.218:8082/"
-    private const val LEAVE_BASE_URL = "http://172.31.4.218:8083/"
-    private const val TRAINING_BASE_URL = "http://172.31.4.218:8087/"
-    private const val NOTIFICATION_BASE_URL = "http://172.31.4.218:8086/"
-    private const val MED_BASE_URL = "http://172.31.4.218:8085/"
-    private const val RECRUITING_BASE_URL = "http://172.31.4.218:8087/"
-    private const val CONDIDATE_BASE_URL = "http://172.31.4.218:8089/"
-    private const val DOCUMENTS_BASE_URL = "http://172.31.4.218:8093/"
+    private const val AUTH_BASE_URL = "http://172.31.4.45:8081/"
+    private const val EMPLOYEE_BASE_URL = "http://172.31.4.45:8082/"
+    private const val LEAVE_BASE_URL = "http://172.31.4.45:8083/"
+    private const val TRAINING_BASE_URL = "http://172.31.4.45:8087/"
+    private const val NOTIFICATION_BASE_URL = "http://172.31.4.45:8086/"
+    private const val MED_BASE_URL = "http://172.31.4.45:8085/"
+    private const val RECRUITING_BASE_URL = "http://172.31.4.45:8087/"
+    private const val CONDIDATE_BASE_URL = "http://172.31.4.45:8089/"
+    private const val DOCUMENTS_BASE_URL = "http://172.31.4.45:8093/"
 
 
     private const val CONNECT_TIMEOUT = 30L

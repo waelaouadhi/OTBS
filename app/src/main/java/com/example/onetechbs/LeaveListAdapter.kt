@@ -52,8 +52,8 @@ class LeaveListAdapter : ListAdapter<LeaveResponse, LeaveListAdapter.LeaveViewHo
                 status.text = leave.status.toString()
                 status.setBackgroundResource(
                     when (leave.status) {
-                        EStatus.APPROUVÉE -> android.R.color.holo_green_light
-                        EStatus.REFUSÉE -> android.R.color.holo_red_light
+                        EStatus.APPROVED -> android.R.color.holo_green_light
+                        EStatus.REJECTED -> android.R.color.holo_red_light
                         EStatus.PENDING -> android.R.color.holo_orange_light
                         else -> android.R.color.darker_gray
                     }

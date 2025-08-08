@@ -97,7 +97,7 @@ class NotificationFragment : Fragment() {
             jwtToken = sharedPreferencesManager.getAuthToken() ?: ""
         }
 
-        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://172.31.4.5:8086"
+        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://172.31.4.45:8086"
         val request = Request.Builder()
             .url("$serverUrl/api/v1/notifications")
             .header("Authorization", "Bearer $jwtToken")
@@ -141,7 +141,7 @@ class NotificationFragment : Fragment() {
             return@withContext false
         }
 
-        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://172.31.4.5:8086"
+        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://172.31.4.45:8086"
         val refreshUrl = "$serverUrl/api/v1/auth/refresh"
 
         Log.d(TAG, "🔍 DEBUG: Starting JWT refresh operation")

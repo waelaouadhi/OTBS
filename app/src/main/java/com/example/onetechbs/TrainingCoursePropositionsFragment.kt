@@ -32,7 +32,7 @@ class TrainingCoursePropositionsFragment : Fragment() {
             title = "Training Course Proposition"
             setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
             setNavigationOnClickListener {
-                findNavController().navigateUp()
+                requireActivity().onBackPressedDispatcher.onBackPressed()
             }
         }
 
@@ -70,7 +70,7 @@ class TrainingCoursePropositionsFragment : Fragment() {
                     val response = com.example.onetechbs.network.RetrofitClient.proposeCourseProposition(requireContext(), request)
                     if (response.isSuccessful) {
                         Toast.makeText(requireContext(), "Course proposition submitted!", Toast.LENGTH_SHORT).show()
-                        findNavController().navigateUp()
+                        requireActivity().onBackPressedDispatcher.onBackPressed()
                     } else {
                         Toast.makeText(requireContext(), "Failed to submit: ${response.code()}", Toast.LENGTH_LONG).show()
                     }
@@ -82,7 +82,7 @@ class TrainingCoursePropositionsFragment : Fragment() {
 
         // Handle Cancel Button
         binding.btnCancel.setOnClickListener {
-            findNavController().navigateUp()
+            requireActivity().onBackPressedDispatcher.onBackPressed()
         }
         return view
     }

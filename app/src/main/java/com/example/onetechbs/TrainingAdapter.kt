@@ -45,10 +45,10 @@ class TrainingAdapter(private val userId: String) :
                 it.invitations?.any { inv -> inv.employeeId == userId && inv.status == EStatus.PENDING } == true
             }
             TrainingFilter.ACCEPTED -> allTrainings.filter {
-                it.invitations?.any { inv -> inv.employeeId == userId && inv.status == EStatus.CONFIRMED } == true
+                it.invitations?.any { inv -> inv.employeeId == userId && inv.status == EStatus.APPROVED } == true
             }
             TrainingFilter.REJECTED -> allTrainings.filter {
-                it.invitations?.any { inv -> inv.employeeId == userId && inv.status == EStatus.REFUSÉE } == true
+                it.invitations?.any { inv -> inv.employeeId == userId && inv.status == EStatus.REJECTED } == true
             }
         }
         submitList(filteredList)
@@ -102,11 +102,11 @@ class TrainingAdapter(private val userId: String) :
                             confirmInvitation(currentUserInvitation.id)
                         }
                     }
-                    EStatus.CONFIRMED -> {
+                    EStatus.APPROVED -> {
                         acceptButton.isEnabled = false
                         acceptButton.text = "Already Accepted"
                     }
-                    EStatus.REFUSÉE -> {
+                    EStatus.REJECTED -> {
                         acceptButton.isEnabled = false
                         acceptButton.text = "Rejected"
                     }
@@ -162,8 +162,8 @@ class TrainingAdapter(private val userId: String) :
                                 val invitation = currentTraining.invitations?.find { it.id == invitationId }
                                 Log.d("TrainingAdapter", "[DEBUG] Current invitation before update: $invitation")
                                 if (invitation != null) {
-                                    invitation.status = EStatus.CONFIRMED
-                                    Log.d("TrainingAdapter", "[DEBUG] Invitation status updated to CONFIRMED")
+                                    invitation.status = EStatus.APPROVED
+                                    Log.d("TrainingAdapter", "[DEBUG] Invitation status updated to APPROVED")
                                 } else {
                                     Log.e("TrainingAdapter", "[DEBUG] Could not find invitation with id=$invitationId in currentTraining.invitations")
                                 }

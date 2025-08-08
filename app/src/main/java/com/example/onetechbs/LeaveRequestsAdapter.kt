@@ -74,6 +74,10 @@ class LeaveRequestsAdapter(
 
         @RequiresApi(Build.VERSION_CODES.O)
         fun bind(leave: Leave) {
+            // Reset card appearance
+            itemView.alpha = 1.0f
+            itemView.setBackgroundColor(Color.WHITE)
+
             try {
                 // Extract employee name from userDn (e.g., "uid=john.doe,ou=users,dc=example,dc=com" -> "john.doe")
                 val name = leave.userDn.split(",")[0].split("=")[1]
@@ -93,24 +97,30 @@ class LeaveRequestsAdapter(
 
             // Show/Hide action buttons based on user role
             val isEmployee = userRole?.uppercase()?.contains("EMPLOYEE") == true
-            btnApprove.isVisible = !isEmployee
-            btnReject.isVisible = !isEmployee
+            val isPending = leave.status == EStatus.PENDING
+            val isApproved = leave.status == EStatus.APPROVED
+            val isRejected = leave.status == EStatus.REJECTED
 
-            // Color mapping for French status values
+            btnApprove.isVisible = !isEmployee && isPending
+            btnReject.isVisible = !isEmployee && isPending
+
+            // Color mapping for status
             val statusColor = when (leave.status) {
-                EStatus.EN_ATTENTE -> Color.parseColor("#FFA500") // Orange
-                EStatus.APPROUVÉE -> Color.parseColor("#008000") // Green
-                EStatus.REFUSÉE -> Color.parseColor("#FF0000") // Red
-                null -> Color.parseColor("#FFA500") // Default to orange for null status
-                EStatus.CONFIRMED -> TODO()
-                EStatus.PENDING -> TODO()
+                EStatus.PENDING -> Color.parseColor("#FFA500") // Orange
+                EStatus.APPROVED -> Color.parseColor("#008000") // Green
+                EStatus.REJECTED -> Color.parseColor("#FF0000") // Red
+                else -> Color.parseColor("#FFA500")
             }
             status.setTextColor(statusColor)
 
-            // Show/hide action buttons based on status
-            val isPending = leave.status == EStatus.EN_ATTENTE
-            btnApprove.visibility = if (isPending) View.VISIBLE else View.GONE
-            btnReject.visibility = if (isPending) View.VISIBLE else View.GONE
+            // Card UI: fade and color for processed
+            if (!isPending) {
+                itemView.animate().alpha(0.5f).setDuration(400).start()
+                itemView.setBackgroundColor(Color.parseColor("#F0F0F0"))
+            } else {
+                itemView.animate().alpha(1.0f).setDuration(400).start()
+                itemView.setBackgroundColor(Color.WHITE)
+            }
 
             // Show download button only for sick leave with attachment
             btnDownloadAttachment.visibility = if (leave.leaveType == ELeaveType.MALADIE && !leave.attachment.isNullOrEmpty()) {
@@ -121,10 +131,24 @@ class LeaveRequestsAdapter(
 
             // Set up click listeners
             btnApprove.setOnClickListener {
+                // Optimistically update UI
+                status.text = "APPROUVÉE"
+                status.setTextColor(Color.parseColor("#008000"))
+                btnApprove.visibility = View.GONE
+                btnReject.visibility = View.GONE
+                itemView.animate().alpha(0.5f).setDuration(400).start()
+                itemView.setBackgroundColor(Color.parseColor("#F0F0F0"))
                 onApprove(leave)
             }
 
             btnReject.setOnClickListener {
+                // Optimistically update UI
+                status.text = "REFUSÉE"
+                status.setTextColor(Color.parseColor("#FF0000"))
+                btnApprove.visibility = View.GONE
+                btnReject.visibility = View.GONE
+                itemView.animate().alpha(0.5f).setDuration(400).start()
+                itemView.setBackgroundColor(Color.parseColor("#F0F0F0"))
                 onReject(leave)
             }
 

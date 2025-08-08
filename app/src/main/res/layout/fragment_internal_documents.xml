@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
@@ -8,9 +9,26 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="24dp">
+        android:padding="16dp">
 
-        <!-- Title -->
+        <!-- Toolbar -->
+
+        <!-- Title Input -->
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@color/colorPrimary"
+            android:title="Internal Documents"
+            android:titleTextColor="@color/calendar_bg"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="HardcodedText" />
+
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/titleInputLayout"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -19,9 +37,10 @@
             android:hint="Title"
             app:boxBackgroundColor="@color/md_theme_surface"
             app:boxStrokeColor="@color/md_theme_primary"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/toolbar"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="24dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/titleEditText"
@@ -31,7 +50,7 @@
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Description -->
+        <!-- Description Input -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/descriptionInputLayout"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -91,7 +110,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="20dp" />
 
-        <!-- File Name Display -->
+        <!-- Selected File Name -->
         <TextView
             android:id="@+id/selectedFileNameTextView"
             android:layout_width="0dp"
@@ -136,7 +155,7 @@
             android:layout_marginTop="32dp"
             android:layout_marginStart="8dp" />
 
-        <!-- Loading Indicator -->
+        <!-- Progress Bar -->
         <ProgressBar
             android:id="@+id/loadingIndicator"
             style="?android:attr/progressBarStyleLarge"
@@ -149,5 +168,4 @@
             android:layout_marginTop="24dp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 </androidx.core.widget.NestedScrollView>

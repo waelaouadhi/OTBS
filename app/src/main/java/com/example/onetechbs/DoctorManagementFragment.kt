@@ -17,6 +17,7 @@ import com.example.onetechbs.databinding.FragmentDoctorManagementBinding
 import com.example.onetechbs.db.MedicalVisitResponse
 import com.example.onetechbs.DoctorFragment
 import com.example.onetechbs.adapter.AppointmentDialogAdapter
+import com.example.onetechbs.db.MedicalVisitRequest
 import com.example.onetechbs.db.MessageResponse
 import com.example.onetechbs.network.RetrofitClient
 import com.example.onetechbs.util.SharedPreferencesManager
@@ -85,15 +86,20 @@ class DoctorManagementFragment : Fragment() {
                 // Show confirmation dialog before deleting
                 showDeleteConfirmationDialog(visit)
             },
+            onUpdateClicked = { visit ->
+                // Show update dialog
+                showUpdateDialog(visit)
+            },
             onCardClicked = { visit -> showDoctorAppointmentsDialog(visit) }
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter
         
-        // Attach swipe-to-delete functionality
-        adapter.attachSwipeToDelete(binding.recyclerView)
+        // Attach swipe actions (delete left, update right)
+        adapter.attachSwipeActions(binding.recyclerView)
     }
     
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun showDeleteConfirmationDialog(visit: MedicalVisitResponse) {
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("Delete Doctor Visit")
@@ -248,16 +254,17 @@ class DoctorManagementFragment : Fragment() {
         RetrofitClient.medService.deleteMedicalVisit(visitId, "Bearer $token")
             .enqueue(object : Callback<MessageResponse> {
                 override fun onResponse(call: Call<MessageResponse>, response: Response<MessageResponse>) {
-                    if (response.isSuccessful) {
-                        Toast.makeText(requireContext(), "Visit deleted ✅", Toast.LENGTH_SHORT).show()
-                        loadVisits()
-                    } else if (response.code() == 401) {
-                        handleUnauthorized()
-                    } else {
-                        Toast.makeText(requireContext(), "Error: ${response.code()}", Toast.LENGTH_SHORT).show()
-                        Log.e(TAG, "Error deleting visit: ${response.errorBody()?.string()}")
-                    }
-                }
+    if (!isAdded) return
+    if (response.isSuccessful) {
+        Toast.makeText(requireContext(), "Visit deleted ✅", Toast.LENGTH_SHORT).show()
+        loadVisits()
+    } else if (response.code() == 401) {
+        handleUnauthorized()
+    } else {
+        Toast.makeText(requireContext(), "Error: ${response.code()}", Toast.LENGTH_SHORT).show()
+        Log.e(TAG, "Error deleting visit: ${response.errorBody()?.string()}")
+    }
+}
 
                 override fun onFailure(call: Call<MessageResponse>, t: Throwable) {
                     Toast.makeText(requireContext(), "Failed: ${t.message}", Toast.LENGTH_SHORT).show()
@@ -265,6 +272,140 @@ class DoctorManagementFragment : Fragment() {
                 }
             })
     }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun showUpdateDialog(visit: MedicalVisitResponse) {
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_update_medical_visit, null)
+        
+        val doctorNameEditText = dialogView.findViewById<android.widget.EditText>(R.id.editTextDoctorName)
+        val visitDateEditText = dialogView.findViewById<android.widget.EditText>(R.id.editTextVisitDate)
+        val startTimeEditText = dialogView.findViewById<android.widget.EditText>(R.id.editTextStartTime)
+        val endTimeEditText = dialogView.findViewById<android.widget.EditText>(R.id.editTextEndTime)
+        
+        // Pre-fill with current values
+        doctorNameEditText.setText(visit.doctorName)
+        visitDateEditText.setText(visit.visitDate)
+        startTimeEditText.setText(visit.startTime)
+        endTimeEditText.setText(visit.endTime)
+        
+        // Set up date picker for visit date
+        visitDateEditText.setOnClickListener {
+            val datePicker = android.app.DatePickerDialog(
+                requireContext(),
+                { _, year, month, dayOfMonth ->
+                    val selectedDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
+                    visitDateEditText.setText(selectedDate)
+                },
+                java.time.LocalDate.parse(visit.visitDate).year,
+                java.time.LocalDate.parse(visit.visitDate).monthValue - 1,
+                java.time.LocalDate.parse(visit.visitDate).dayOfMonth
+            )
+            datePicker.show()
+        }
+        
+        // Set up time pickers
+        startTimeEditText.setOnClickListener {
+            val timePicker = android.app.TimePickerDialog(
+                requireContext(),
+                { _, hourOfDay, minute ->
+                    val selectedTime = String.format("%02d:%02d:00", hourOfDay, minute)
+                    startTimeEditText.setText(selectedTime)
+                },
+                java.time.LocalTime.parse(visit.startTime).hour,
+                java.time.LocalTime.parse(visit.startTime).minute,
+                true
+            )
+            timePicker.show()
+        }
+        
+        endTimeEditText.setOnClickListener {
+            val timePicker = android.app.TimePickerDialog(
+                requireContext(),
+                { _, hourOfDay, minute ->
+                    val selectedTime = String.format("%02d:%02d:00", hourOfDay, minute)
+                    endTimeEditText.setText(selectedTime)
+                },
+                java.time.LocalTime.parse(visit.endTime).hour,
+                java.time.LocalTime.parse(visit.endTime).minute,
+                true
+            )
+            timePicker.show()
+        }
+        
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Update Medical Visit")
+            .setView(dialogView)
+            .setPositiveButton("Update") { _, _ ->
+                val updatedVisit = MedicalVisitRequest(
+                    doctorName = doctorNameEditText.text.toString().trim(),
+                    visitDate = visitDateEditText.text.toString().trim(),
+                    startTime = startTimeEditText.text.toString().trim(),
+                    endTime = endTimeEditText.text.toString().trim()
+                )
+                
+                if (validateUpdateInput(updatedVisit)) {
+                    updateVisit(visit.id, updatedVisit)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun validateUpdateInput(visit: MedicalVisitRequest): Boolean {
+        if (visit.doctorName.isEmpty()) {
+            Toast.makeText(requireContext(), "Doctor name is required", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (visit.visitDate.isEmpty()) {
+            Toast.makeText(requireContext(), "Visit date is required", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (visit.startTime.isEmpty()) {
+            Toast.makeText(requireContext(), "Start time is required", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (visit.endTime.isEmpty()) {
+            Toast.makeText(requireContext(), "End time is required", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        return true
+    }
+    
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun updateVisit(visitId: Long, updatedVisit: MedicalVisitRequest) {
+        val token = SharedPreferencesManager.getInstance(requireContext()).getAuthToken()
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Token missing. Please login again.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        RetrofitClient.medService.updateMedicalVisit(visitId, "Bearer $token", updatedVisit)
+            .enqueue(object : Callback<MessageResponse> {
+                override fun onResponse(call: Call<MessageResponse>, response: Response<MessageResponse>) {
+                    if (!isAdded) return
+                    if (response.isSuccessful) {
+                        Toast.makeText(requireContext(), "Visit updated successfully ✅", Toast.LENGTH_SHORT).show()
+                        loadVisits()
+                    } else if (response.code() == 401) {
+                        handleUnauthorized()
+                    } else {
+                        val errorMessage = try {
+                            response.errorBody()?.string() ?: "Unknown error"
+                        } catch (e: Exception) {
+                            "Error: ${response.code()}"
+                        }
+                        Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
+                        Log.e(TAG, "Error updating visit: $errorMessage")
+                    }
+                }
+
+                override fun onFailure(call: Call<MessageResponse>, t: Throwable) {
+                    Toast.makeText(requireContext(), "Failed: ${t.message}", Toast.LENGTH_SHORT).show()
+                    Log.e(TAG, "Network error when updating visit", t)
+                }
+            })
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

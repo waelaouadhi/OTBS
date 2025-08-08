@@ -297,6 +297,13 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Call<MessageResponse>
 
+    @PUT("api/v1/medical-visits/{id}")
+    fun updateMedicalVisit(
+        @Path("id") visitId: Long,
+        @Header("Authorization") token: String,
+        @Body request: MedicalVisitRequest
+    ): Call<MessageResponse>
+
     @POST("api/v1/appointments")
     suspend fun submitAppointment(
         @Header("Authorization") authToken: String,

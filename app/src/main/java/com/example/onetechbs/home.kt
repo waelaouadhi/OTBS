@@ -66,7 +66,7 @@ class home : AppCompatActivity() {
                 }
                 R.id.addLeave -> replaceFragment(AddLeaveFragment())
                 R.id.doctor -> replaceFragment(DoctorFragment())
-                R.id.training -> replaceFragment(TrainingFragment())
+
                 R.id.notification -> replaceFragment(NotificationFragment())
             }
             true
@@ -86,14 +86,14 @@ class home : AppCompatActivity() {
                 R.id.nav_home -> replaceFragment(Homefra())
                 R.id.nav_leaves -> replaceFragment(LeaveListFragment())
                 R.id.nav_doctor -> replaceFragment(DoctorListFragment())
-                R.id.nav_training -> replaceFragment(TrainingListFragment())
+
                 R.id.nav_notification -> replaceFragment(NotificationFragment())
                 R.id.nav_available_jobs -> replaceFragment(AvailableJobsFragment())
                 R.id.nav_document -> replaceFragment(DocumentFragment())
                 R.id.nav_course_list -> replaceFragment(CoursesListFragment())
 
                 R.id.nav_internal_documents -> {
-                    if (getUserRole() == "HRD") replaceFragment(InternalDocumentsFragment())
+                    if (isHRD() )replaceFragment(InternalDocumentsFragment())
                     else showAccessDenied()
                 }
 
@@ -107,16 +107,16 @@ class home : AppCompatActivity() {
                     else showAccessDenied()
                 }
                 R.id.nav_course_propositions_list -> {
-                    val role = getUserRole()
-                    if (role == "Manager" || role == "HRD") {
+
+                    if (isManager()|| isHRD()){
                         replaceFragment(TrainingCoursePropositionsListFragment())
                     } else {
                         showAccessDenied()
                     }
             }
                 R.id.nav_enrollments -> {
-                    val role = getUserRole()
-                    if (role == "Manager" || role == "HRD") {
+
+                    if (isHR() || isManager()|| isHRD()) {
                         replaceFragment(EnrollmentsListFragment())
                     } else {
                         showAccessDenied()
@@ -131,15 +131,15 @@ class home : AppCompatActivity() {
                 R.id.nav_create_course -> {
 
                     val role = getUserRole()
-                    if (role == "HRD")
+                    if (isHRD())
                         replaceFragment(CreateCourseFragment())
                     else showAccessDenied()
                 }
 
-                R.id.nav_training_management -> {
-                    if (isManager()) replaceFragment(TrainingManagementFragment())
-                    else showAccessDenied()
-                }
+//                R.id.nav_training_management -> {
+//                    if (isManager()) replaceFragment(TrainingManagementFragment())
+//                    else showAccessDenied()
+//                }
 
                 R.id.nav_leaves_management -> {
                     if (isManager()) replaceFragment(HRLeaveManagementFragment())
@@ -150,8 +150,15 @@ class home : AppCompatActivity() {
                 }
                 R.id.nav_treat_personal_documents -> {
                     val role = getUserRole()
-                    if (role == "HR" || role == "HRD") {
+                    if (isHR()|| isHRD()) {
                         replaceFragment(TreatPersonalDocumentsFragment())
+                    } else {
+                        showAccessDenied()
+                    }
+                }
+                R.id.nav_attendance -> {
+                    if (isHR() || isHRD()) {
+                        replaceFragment(com.example.onetechbs.attendance.AttendanceFragment())
                     } else {
                         showAccessDenied()
                     }
@@ -163,34 +170,172 @@ class home : AppCompatActivity() {
     }
 
     private fun applyRoleBasedUI() {
+        val navMenu = navigationView.menu
+        val bottomMenu = binding.bottomNavigationView.menu
         val role = getUserRole()
 
-        val navMenu = navigationView.menu
+        // Hide all navigation items by default
+        hideAllNavItems(navMenu)
+        hideAllBottomNavItems(bottomMenu)
 
-        // Default: hide all role-specific items
-        navMenu.findItem(R.id.nav_internal_recruiting)?.isVisible = false
-        navMenu.findItem(R.id.nav_internal_documents)?.isVisible = false
-        navMenu.findItem(R.id.nav_doctor_management)?.isVisible = false
-        navMenu.findItem(R.id.nav_training_management)?.isVisible = false
-        navMenu.findItem(R.id.nav_leaves_management)?.isVisible = false
-        navMenu.findItem(R.id.nav_treat_personal_documents)?.isVisible = false
-
-        // Bottom nav role-specific visibility
-        binding.bottomNavigationView.menu.findItem(R.id.training)?.isVisible = role == "Manager"
-        binding.bottomNavigationView.menu.findItem(R.id.doctor)?.isVisible = role == "HR"
-
-        // Show items based on role
-        if (role == "HR") {
-            navMenu.findItem(R.id.nav_internal_recruiting)?.isVisible = true
-            navMenu.findItem(R.id.nav_doctor_management)?.isVisible = true
-            navMenu.findItem(R.id.nav_treat_personal_documents)?.isVisible = true
-        } else if (role == "Manager") {
-            navMenu.findItem(R.id.nav_training_management)?.isVisible = true
-            navMenu.findItem(R.id.nav_leaves_management)?.isVisible = true
-        } else if (role == "HRD") {
-            navMenu.findItem(R.id.nav_internal_documents)?.isVisible = true
-            navMenu.findItem(R.id.nav_treat_personal_documents)?.isVisible = true
+        // Show items based on specific role requirements
+        when {
+            isHR() -> {
+                setupHRNavigation(navMenu)
+                setupHRBottomNavigation(bottomMenu)
+            }
+            isManager() -> {
+                setupManagerNavigation(navMenu)
+                setupManagerBottomNavigation(bottomMenu)
+            }
+            isHRD() -> {
+                setupHRDNavigation(navMenu)
+                setupHRDBottomNavigation(bottomMenu)
+            }
+            isEmployee() -> {
+                setupEmployeeNavigation(navMenu)
+                setupEmployeeBottomNavigation(bottomMenu)
+            }
         }
+    }
+
+    private fun hideAllNavItems(navMenu: android.view.Menu) {
+        // Hide all drawer navigation items
+        navMenu.findItem(R.id.nav_profile)?.isVisible = false
+        navMenu.findItem(R.id.nav_leaves)?.isVisible = false
+        navMenu.findItem(R.id.nav_available_jobs)?.isVisible = false
+        navMenu.findItem(R.id.nav_doctor)?.isVisible = false
+        navMenu.findItem(R.id.nav_doctor_management)?.isVisible = false
+        navMenu.findItem(R.id.nav_course_list)?.isVisible = false
+        navMenu.findItem(R.id.nav_enrollments)?.isVisible = false
+        navMenu.findItem(R.id.nav_attendance)?.isVisible = false
+        navMenu.findItem(R.id.nav_document)?.isVisible = false
+        navMenu.findItem(R.id.nav_internal_documents_list)?.isVisible = false
+        navMenu.findItem(R.id.nav_treat_personal_documents)?.isVisible = false
+        navMenu.findItem(R.id.nav_internal_recruiting)?.isVisible = false
+        navMenu.findItem(R.id.nav_course_propositions)?.isVisible = false
+        navMenu.findItem(R.id.nav_course_propositions_list)?.isVisible = false
+        navMenu.findItem(R.id.nav_leaves_management)?.isVisible = false
+        navMenu.findItem(R.id.nav_create_course)?.isVisible = false
+        navMenu.findItem(R.id.nav_internal_documents)?.isVisible = false
+        navMenu.findItem(R.id.nav_notification)?.isVisible = false
+        navMenu.findItem(R.id.nav_logout)?.isVisible = false
+    }
+
+    private fun setupHRNavigation(navMenu: android.view.Menu) {
+        // HR: profile, leaves, Available Jobs, Doctor, Doctor Management, course List, 
+        // Enrolment, Attendance Management, Documents, Internal Documents List, 
+        // Treat Personal Documents, Internal Recruiting, Notification and logout
+        navMenu.findItem(R.id.nav_profile)?.isVisible = true
+        navMenu.findItem(R.id.nav_leaves)?.isVisible = true
+        navMenu.findItem(R.id.nav_available_jobs)?.isVisible = true
+        navMenu.findItem(R.id.nav_doctor)?.isVisible = true
+        navMenu.findItem(R.id.nav_doctor_management)?.isVisible = true
+        navMenu.findItem(R.id.nav_course_list)?.isVisible = true
+        navMenu.findItem(R.id.nav_enrollments)?.isVisible = true
+        navMenu.findItem(R.id.nav_attendance)?.isVisible = true
+        navMenu.findItem(R.id.nav_document)?.isVisible = true
+        navMenu.findItem(R.id.nav_internal_documents_list)?.isVisible = true
+        navMenu.findItem(R.id.nav_treat_personal_documents)?.isVisible = true
+        navMenu.findItem(R.id.nav_internal_recruiting)?.isVisible = true
+        navMenu.findItem(R.id.nav_notification)?.isVisible = true
+        navMenu.findItem(R.id.nav_logout)?.isVisible = true
+    }
+
+    private fun setupManagerNavigation(navMenu: android.view.Menu) {
+        // Manager: profile, leaves, Available Jobs, Doctor, courses list, 
+        // course Propositions, course proposition list, leave manager, 
+        // documents, internal Documents list, notification and logout
+        navMenu.findItem(R.id.nav_profile)?.isVisible = true
+        navMenu.findItem(R.id.nav_leaves)?.isVisible = true
+        navMenu.findItem(R.id.nav_available_jobs)?.isVisible = true
+        navMenu.findItem(R.id.nav_doctor)?.isVisible = true
+        navMenu.findItem(R.id.nav_course_list)?.isVisible = true
+        navMenu.findItem(R.id.nav_course_propositions)?.isVisible = true
+        navMenu.findItem(R.id.nav_course_propositions_list)?.isVisible = true
+        navMenu.findItem(R.id.nav_leaves_management)?.isVisible = true
+        navMenu.findItem(R.id.nav_document)?.isVisible = true
+        navMenu.findItem(R.id.nav_internal_documents_list)?.isVisible = true
+        navMenu.findItem(R.id.nav_notification)?.isVisible = true
+        navMenu.findItem(R.id.nav_logout)?.isVisible = true
+    }
+
+    private fun setupHRDNavigation(navMenu: android.view.Menu) {
+        // HRD: profile, leaves, Available Jobs, Doctor, Enrolments, 
+        // course Proposition List, course List, Create Course, Attendance management, 
+        // documents, internal documents, internal documents List, 
+        // treat personal Documents, notification and logout
+        navMenu.findItem(R.id.nav_profile)?.isVisible = true
+        navMenu.findItem(R.id.nav_leaves)?.isVisible = true
+        navMenu.findItem(R.id.nav_available_jobs)?.isVisible = true
+        navMenu.findItem(R.id.nav_doctor)?.isVisible = true
+        navMenu.findItem(R.id.nav_enrollments)?.isVisible = true
+        navMenu.findItem(R.id.nav_course_propositions_list)?.isVisible = true
+        navMenu.findItem(R.id.nav_course_list)?.isVisible = true
+        navMenu.findItem(R.id.nav_create_course)?.isVisible = true
+        navMenu.findItem(R.id.nav_attendance)?.isVisible = true
+        navMenu.findItem(R.id.nav_document)?.isVisible = true
+        navMenu.findItem(R.id.nav_internal_documents)?.isVisible = true
+        navMenu.findItem(R.id.nav_internal_documents_list)?.isVisible = true
+        navMenu.findItem(R.id.nav_treat_personal_documents)?.isVisible = true
+        navMenu.findItem(R.id.nav_notification)?.isVisible = true
+        navMenu.findItem(R.id.nav_logout)?.isVisible = true
+    }
+
+    private fun setupEmployeeNavigation(navMenu: android.view.Menu) {
+        // Employee: profile, leaves, Available Jobs, Doctor, course list, 
+        // internal Documents, documents, notification and logout
+        navMenu.findItem(R.id.nav_profile)?.isVisible = true
+        navMenu.findItem(R.id.nav_leaves)?.isVisible = true
+        navMenu.findItem(R.id.nav_available_jobs)?.isVisible = true
+        navMenu.findItem(R.id.nav_doctor)?.isVisible = true
+        navMenu.findItem(R.id.nav_course_list)?.isVisible = true
+        navMenu.findItem(R.id.nav_internal_documents_list)?.isVisible = true
+        navMenu.findItem(R.id.nav_document)?.isVisible = true
+        navMenu.findItem(R.id.nav_notification)?.isVisible = true
+        navMenu.findItem(R.id.nav_logout)?.isVisible = true
+    }
+
+    private fun hideAllBottomNavItems(bottomMenu: android.view.Menu) {
+        // Hide all bottom navigation items
+        bottomMenu.findItem(R.id.home)?.isVisible = false
+        bottomMenu.findItem(R.id.doctor)?.isVisible = false
+        bottomMenu.findItem(R.id.addLeave)?.isVisible = false
+        bottomMenu.findItem(R.id.profile)?.isVisible = false
+        bottomMenu.findItem(R.id.notification)?.isVisible = false
+    }
+
+    private fun setupEmployeeBottomNavigation(bottomMenu: android.view.Menu) {
+        // Employee: Home, addLeave, Profile and notification
+        bottomMenu.findItem(R.id.home)?.isVisible = true
+        bottomMenu.findItem(R.id.addLeave)?.isVisible = true
+        bottomMenu.findItem(R.id.profile)?.isVisible = true
+        bottomMenu.findItem(R.id.notification)?.isVisible = true
+    }
+
+    private fun setupManagerBottomNavigation(bottomMenu: android.view.Menu) {
+        // Manager: Home, addLeave, Profile and notification
+        bottomMenu.findItem(R.id.home)?.isVisible = true
+        bottomMenu.findItem(R.id.addLeave)?.isVisible = true
+        bottomMenu.findItem(R.id.profile)?.isVisible = true
+        bottomMenu.findItem(R.id.notification)?.isVisible = true
+    }
+
+    private fun setupHRBottomNavigation(bottomMenu: android.view.Menu) {
+        // HR: Home, Doctor is Available, addLeave, Profile, notification
+        bottomMenu.findItem(R.id.home)?.isVisible = true
+        bottomMenu.findItem(R.id.doctor)?.isVisible = true
+        bottomMenu.findItem(R.id.addLeave)?.isVisible = true
+        bottomMenu.findItem(R.id.profile)?.isVisible = true
+        bottomMenu.findItem(R.id.notification)?.isVisible = true
+    }
+
+    private fun setupHRDBottomNavigation(bottomMenu: android.view.Menu) {
+        // HRD: Home, addLeave, Profile and notification
+        bottomMenu.findItem(R.id.home)?.isVisible = true
+        bottomMenu.findItem(R.id.addLeave)?.isVisible = true
+        bottomMenu.findItem(R.id.profile)?.isVisible = true
+        bottomMenu.findItem(R.id.notification)?.isVisible = true
     }
 
     private fun getUserRole(): String {
@@ -200,6 +345,9 @@ class home : AppCompatActivity() {
 
     private fun isHR(): Boolean = getUserRole() == "HR"
     private fun isManager(): Boolean = getUserRole() == "Manager"
+    private fun isHRD(): Boolean = getUserRole() == "HRD"
+    private fun isEmployee(): Boolean = getUserRole() == "Employee"
+
 
     private fun showAccessDenied() {
         Toast.makeText(this, "Access denied for your role", Toast.LENGTH_SHORT).show()
