@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Evaluation Criteria"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"
+        android:textColor="@color/calendar_bg" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Set the weight for each evaluation criterion. Total must equal 100%."
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"
+        android:textColor="@android:color/black" />
+
+    <TextView
+        android:id="@+id/tvTotalWeight"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Total Weight: 100%"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp"
+        android:textAlignment="center"
+        android:textColor="@android:color/holo_green_dark" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCriteria"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="24dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSaveAndProceed"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Save and Proceed"
+        android:textSize="16sp"
+        app:cornerRadius="8dp"
+        app:backgroundTint="@color/colorAccent" />
+
+</LinearLayout>
