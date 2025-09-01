@@ -36,6 +36,7 @@ class TreatPersonalDocumentsFragment : Fragment() {
     private lateinit var adapter: TreatPersonalDocumentsAdapter
     private var fileUri: Uri? = null
     private var pickedFileCallback: ((Uri?) -> Unit)? = null
+    private var allDocs: List<PersonalDocumentResponseDTO> = emptyList()
 
     private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         pickedFileCallback?.invoke(uri)
@@ -63,6 +64,7 @@ class TreatPersonalDocumentsFragment : Fragment() {
         )
         binding.recyclerTreatDocuments.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerTreatDocuments.adapter = adapter
+        initFiltersUI()
         fetchDocuments()
     }
 
@@ -93,7 +95,7 @@ class TreatPersonalDocumentsFragment : Fragment() {
                     }
                     .build()
                 val retrofit = retrofit2.Retrofit.Builder()
-                    .baseUrl("http://172.31.4.45:8093/") // Use your DOCUMENTS_BASE_URL
+                    .baseUrl("http://192.168.1.184:8093/") // Use your DOCUMENTS_BASE_URL
                     .client(okHttpClient)
                     .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
                     .build()
@@ -102,8 +104,8 @@ class TreatPersonalDocumentsFragment : Fragment() {
                 android.util.Log.d("TreatPersonalDocuments", "[GET] Response code: ${'$'}{response.code()}")
                 android.util.Log.d("TreatPersonalDocuments", "[GET] Response message: ${'$'}{response.message()}")
                 if (response.isSuccessful) {
-                    val docs = response.body() ?: emptyList()
-                    adapter.submitList(docs)
+                    allDocs = response.body() ?: emptyList()
+                    applyFilters()
                 } else {
                     Toast.makeText(requireContext(), "Failed to fetch documents: ${'$'}{response.code()} ${'$'}{response.message()}", Toast.LENGTH_LONG).show()
                     android.util.Log.e("TreatPersonalDocuments", "Failed to fetch documents: ${response.code()} ${response.message()}")
@@ -142,6 +144,7 @@ class TreatPersonalDocumentsFragment : Fragment() {
         dialogView.findViewById<android.widget.Button>(R.id.button_approve_cancel).setOnClickListener { dialog.dismiss() }
         dialog.show()
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun showRejectDialog(doc: PersonalDocumentResponseDTO) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_reject_document, null)
@@ -162,6 +165,7 @@ class TreatPersonalDocumentsFragment : Fragment() {
         dialogView.findViewById<android.widget.Button>(R.id.button_reject_cancel).setOnClickListener { dialog.dismiss() }
         dialog.show()
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun showProcessingDialog(doc: PersonalDocumentResponseDTO) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_processing_document, null)
@@ -205,7 +209,7 @@ class TreatPersonalDocumentsFragment : Fragment() {
                     }
                     .build()
                 val retrofit = retrofit2.Retrofit.Builder()
-                    .baseUrl("http://172.31.4.45:8093/") // <-- Fixed: do not duplicate /api/v1/
+                    .baseUrl("http://192.168.1.184:8093/") // <-- Fixed: do not duplicate /api/v1/
                     .client(okHttpClient)
                     .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
                     .build()
@@ -247,6 +251,42 @@ class TreatPersonalDocumentsFragment : Fragment() {
             }
         }
     }
+
+    private fun initFiltersUI() {
+        // Text search
+        binding.editSearch?.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { applyFilters() }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+        // Status chips
+        binding.chipGroupStatus?.setOnCheckedChangeListener { _, _ -> applyFilters() }
+    }
+
+    private fun applyFilters() {
+        val query = binding.editSearch?.text?.toString()?.trim()?.lowercase() ?: ""
+        val checkedId = binding.chipGroupStatus?.checkedChipId ?: com.google.android.material.R.id.design_bottom_sheet // dummy default
+        val statusFilter: EDocumentStatus? = when (checkedId) {
+            binding.chipPending?.id -> EDocumentStatus.PENDING
+            binding.chipProcessing?.id -> EDocumentStatus.PROCESSING
+            binding.chipCompleted?.id -> EDocumentStatus.COMPLETED
+            binding.chipRejected?.id -> EDocumentStatus.REJECTED
+            else -> null // All
+        }
+
+        val filtered = allDocs.filter { doc ->
+            val matchesQuery = if (query.isEmpty()) true else {
+                (doc.employeeName?.lowercase()?.contains(query) == true) ||
+                (doc.documentType.name.lowercase().contains(query)) ||
+                (doc.notes?.lowercase()?.contains(query) == true)
+            }
+            val matchesStatus = statusFilter?.let { doc.status == it } ?: true
+            matchesQuery && matchesStatus
+        }
+        // Sort by requestDate (string) descending. Works for ISO-8601 or yyyy-MM-dd formats.
+        adapter.submitList(filtered.sortedByDescending { it.requestDate })
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

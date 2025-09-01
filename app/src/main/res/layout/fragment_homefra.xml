@@ -17,9 +17,7 @@
         android:layout_width="419dp"
         android:layout_height="309dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="20dp"
         android:padding="16dp"
-        app:layout_constraintBottom_toTopOf="@+id/statsContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -40,13 +38,16 @@
 
         <!-- summury of leave  -->
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/profileImg"
-            android:layout_width="106dp"
-            android:layout_height="77dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             android:layout_marginStart="28dp"
-            android:background="?attr/selectableItemBackground"
+            android:scaleType="centerCrop"
             android:src="@drawable/imgpro"
+            app:shapeAppearanceOverlay="@style/CircleImageView"
+            app:strokeWidth="2dp"
+            app:strokeColor="@color/white"
             app:layout_constraintBottom_toTopOf="@+id/bgImage"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -147,105 +148,28 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/statsContainer"
-        android:layout_width="406dp"
-        android:layout_height="66dp"
-        android:layout_marginTop="16dp"
-        android:padding="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/profileSection">
-
-        <RadioGroup
-            android:id="@+id/segmentedControl"
-            android:layout_width="276dp"
-            android:layout_height="31dp"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <RadioButton
-                android:id="@+id/radio_all"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/segment_button_left"
-                android:buttonTint="@color/colorPrimary"
-
-
-                android:text="All"
-                android:textColor="@color/colorPrimaryDark" />
-
-            <RadioButton
-                android:id="@+id/radio_pending"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/segment_button_center"
-                android:buttonTint="@color/colorPrimary"
-
-                android:text="Pending"
-                android:textColor="@color/colorPrimaryDark" />
-
-            <RadioButton
-                android:id="@+id/radio_approved"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/segment_button_right"
-                android:buttonTint="@color/colorPrimary"
-
-                android:text="Approved"
-                android:textColor="@color/colorPrimaryDark" />
-        </RadioGroup>
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <FrameLayout
-        android:id="@+id/frameLayoutContainer"
-        android:layout_width="377dp"
-        android:layout_height="269dp"
+    <!-- Calendar Section with enhanced styling -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/calendarCard"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.488"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/statsContainer"
-        app:layout_constraintVertical_bias="0.148">
+        app:layout_constraintTop_toBottomOf="@+id/profileSection"
+        app:layout_constraintVertical_bias="0.0">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+        <FrameLayout
+            android:id="@+id/CalendarFrame"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white" />
 
+    </androidx.cardview.widget.CardView>
 
-            <ImageView
-                android:id="@+id/leaveImageView"
-                android:layout_width="380dp"
-                android:layout_height="213dp"
-                android:src="@drawable/framee"
-                android:visibility="visible"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_bias="0.0" />
-
-
-            <!-- Submit Button -->
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </FrameLayout>
-
-    <ImageButton
-        android:id="@+id/buttonsub"
-        android:layout_width="186dp"
-        android:layout_height="52dp"
-        android:layout_marginBottom="28dp"
-        android:background="?attr/selectableItemBackground"
-        android:contentDescription="Submit Leave"
-        android:src="@drawable/submitleave"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

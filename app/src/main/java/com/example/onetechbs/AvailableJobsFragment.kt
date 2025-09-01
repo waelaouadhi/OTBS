@@ -13,9 +13,19 @@ import android.os.CountDownTimer
 import com.example.onetechbs.util.SharedPreferencesManager
 import android.view.ViewGroup
 import android.widget.Toast
+import android.widget.ArrayAdapter as AndroidArrayAdapter
+import android.widget.AutoCompleteTextView
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ViewModel
+import androidx.appcompat.widget.SearchView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,6 +36,7 @@ import com.example.onetechbs.db.JobOfferResponseDTO
 import com.example.onetechbs.network.RetrofitClient
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.chip.ChipGroup
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -38,6 +49,19 @@ class AvailableJobsFragment : Fragment() {
     private lateinit var jobAdapter: JobAdapter
     private var isHR = false
     private var rootView: View? = null
+    private val appliedJobIds: MutableSet<Long> = mutableSetOf()
+
+    // Filtering state
+    private var allJobs: List<JobOfferResponseDTO> = emptyList()
+    private var searchJob: Job? = null
+
+    private data class FilterCriteria(
+        val query: String = "",
+        val department: String? = null,
+        val experience: String? = null, // Junior, Mid, Senior
+        val status: String? = null      // Open, CLOSED/Finished
+    )
+    private var currentFilter = FilterCriteria()
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
@@ -49,6 +73,7 @@ class AvailableJobsFragment : Fragment() {
             initializeViews()
             setupUserRole()
             setupRecyclerView()
+            setupFiltersUI()
             setupShakeToUndo() // Initialize shake detection
             setupSwipeToDelete()
             setupSwipeRefresh()
@@ -61,7 +86,7 @@ class AvailableJobsFragment : Fragment() {
         rootView?.let { view ->
             recyclerView = view.findViewById(R.id.jobsRecyclerView)
             swipeRefreshLayout = view.findViewById(R.id.swipeRefresh)
-                        emptyView = view.findViewById(R.id.emptyView)
+            emptyView = view.findViewById(R.id.emptyView)
             val toolbar: MaterialToolbar = view.findViewById(R.id.toolbar)
             toolbar.setNavigationOnClickListener {
                 requireActivity().onBackPressedDispatcher.onBackPressed()
@@ -71,7 +96,11 @@ class AvailableJobsFragment : Fragment() {
 
     private fun setupUserRole() {
         val prefs = requireActivity().getSharedPreferences("auth", Context.MODE_PRIVATE)
-        isHR = prefs.getString("role", "employee") == "HR"
+        val role = prefs.getString("role", "Employee") ?: "Employee"
+        // Treat HR and HRD as managers; Employee and Manager are applicants
+        isHR = role.equals("HR", ignoreCase = true) || role.equals("HRD", ignoreCase = true)
+        // Show status chips only to HR/HRD
+        rootView?.findViewById<ChipGroup>(R.id.chipGroupStatus)?.visibility = if (isHR) View.VISIBLE else View.GONE
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -81,14 +110,131 @@ class AvailableJobsFragment : Fragment() {
             onDeleteClick = { job -> handleDeleteJob(job) },
             onUpdateClick = { job -> handleUpdateJob(job) },
             onFinishClick = { job -> handleFinishJob(job) },
-            onApplicantsClick = { job -> handleViewApplicants(job) }
-        )
+            onApplicantsClick = { job -> handleViewApplicants(job) },
+            onCancelClick = { job -> confirmAndCancelApplication(job) }
+        ).also { it.updateAppliedJobs(appliedJobIds) }
 
         recyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = jobAdapter
             setHasFixedSize(true)
         }
+    }
+
+    private fun setupFiltersUI() {
+        val searchView = rootView?.findViewById<SearchView>(R.id.searchViewJobs)
+        val deptInput = rootView?.findViewById<AutoCompleteTextView>(R.id.autoDepartment)
+        val chipExp = rootView?.findViewById<ChipGroup>(R.id.chipGroupExperience)
+        val chipStatus = rootView?.findViewById<ChipGroup>(R.id.chipGroupStatus)
+        val btnReset = rootView?.findViewById<View>(R.id.btnClearFilters)
+        val btnResetEmpty = rootView?.findViewById<View>(R.id.btnClearFiltersEmpty)
+        val btnToggleFilters = rootView?.findViewById<android.widget.ImageButton>(R.id.btnToggleFilters)
+        val filtersContent = rootView?.findViewById<View>(R.id.filtersContent)
+
+        // Initial visibility of header reset button based on current filter state
+        updateClearButtonVisibility(btnReset)
+
+        // Search with debounce
+        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return true
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                searchJob?.cancel()
+                searchJob = viewLifecycleOwner.lifecycleScope.launch {
+                    delay(250)
+                    currentFilter = currentFilter.copy(query = newText.orEmpty())
+                    applyFilters()
+                    updateClearButtonVisibility(btnReset)
+                }
+                return true
+            }
+        })
+
+        // Experience chips single selection
+        chipExp?.setOnCheckedStateChangeListener { _, _ ->
+            val selected = when (chipExp.checkedChipId) {
+                R.id.chipExpJunior -> "Junior"
+                R.id.chipExpMid -> "Mid"
+                R.id.chipExpSenior -> "Senior"
+                else -> null
+            }
+            currentFilter = currentFilter.copy(experience = selected)
+            applyFilters()
+            updateClearButtonVisibility(btnReset)
+        }
+
+        // Status chips (if visible for HR/HRD) single selection
+        chipStatus?.setOnCheckedStateChangeListener { _, _ ->
+            val selected = when (chipStatus.checkedChipId) {
+                R.id.chipStatusOpen -> "OPEN"
+                R.id.chipStatusClosed -> "CLOSED"
+                else -> null
+            }
+            currentFilter = currentFilter.copy(status = selected)
+            applyFilters()
+            updateClearButtonVisibility(btnReset)
+        }
+
+        // Department dropdown
+        deptInput?.setOnItemClickListener { parent, _, position, _ ->
+            val value = parent.getItemAtPosition(position)?.toString().orEmpty()
+            // Treat "All" or empty as no department filter
+            val department = value.ifBlank { null }?.takeUnless { it.equals("All", ignoreCase = true) }
+            currentFilter = currentFilter.copy(department = department)
+            applyFilters()
+            updateClearButtonVisibility(btnReset)
+        }
+
+        // Reset buttons
+        btnReset?.setOnClickListener {
+            // Clear UI controls to default
+            searchView?.setQuery("", false)
+            deptInput?.setText("", false)
+            chipExp?.check(R.id.chipExpAll)
+            chipStatus?.check(R.id.chipStatusAll)
+
+            // Reset filter model
+            currentFilter = currentFilter.copy(
+                query = "",
+                department = null,
+                experience = null,
+                status = null
+            )
+            applyFilters()
+            updateClearButtonVisibility(btnReset)
+        }
+
+        btnResetEmpty?.setOnClickListener {
+            btnReset?.performClick()
+        }
+
+        // Collapse/expand filters content and update icon
+        btnToggleFilters?.setImageResource(android.R.drawable.arrow_down_float)
+        btnToggleFilters?.setOnClickListener { btn ->
+            filtersContent?.let { content ->
+                val toShow = content.visibility != View.VISIBLE
+                content.visibility = if (toShow) View.VISIBLE else View.GONE
+                if (toShow) {
+                    btnToggleFilters.setImageResource(android.R.drawable.arrow_up_float)
+                } else {
+                    btnToggleFilters.setImageResource(android.R.drawable.arrow_down_float)
+                }
+            }
+        }
+    }
+
+    private fun updateClearButtonVisibility(btnReset: View?) {
+        btnReset?.visibility = if (isDefaultFilter()) View.GONE else View.VISIBLE
+    }
+
+    private fun isDefaultFilter(): Boolean {
+        // Consider default when nothing is set: empty query, no department, experience/status not chosen or at "All"
+        val isQueryDefault = currentFilter.query.isNullOrEmpty()
+        val isDeptDefault = currentFilter.department.isNullOrEmpty()
+        val isExpDefault = currentFilter.experience.isNullOrEmpty()
+        val isStatusDefault = currentFilter.status.isNullOrEmpty()
+        return isQueryDefault && isDeptDefault && isExpDefault && isStatusDefault
     }
 
     // --- Shake to Undo State ---
@@ -222,9 +368,9 @@ class AvailableJobsFragment : Fragment() {
 
                 if (direction == ItemTouchHelper.LEFT) {
                     MaterialAlertDialogBuilder(requireContext())
-                        .setTitle(getString(R.string.delete_job_title))
-                        .setMessage(getString(R.string.delete_job_message))
-                        .setPositiveButton(getString(R.string.delete)) { _, _ ->
+                        .setTitle("Delete Job?")
+                        .setMessage("Are you sure you want to delete this job?")
+                        .setPositiveButton("Delete") { _, _ ->
                             itemView.animate()
                                 .alpha(0f)
                                 .setDuration(200)
@@ -234,7 +380,7 @@ class AvailableJobsFragment : Fragment() {
                                 }
                                 .start()
                         }
-                        .setNegativeButton(getString(R.string.cancel)) { _, _ ->
+                        .setNegativeButton("Cancel") { _, _ ->
                             jobAdapter.notifyItemChanged(position)
                         }
                         .setOnCancelListener {
@@ -243,19 +389,19 @@ class AvailableJobsFragment : Fragment() {
                         .show()
                 } else if (direction == ItemTouchHelper.RIGHT) {
                     MaterialAlertDialogBuilder(requireContext())
-                        .setTitle(getString(R.string.finish_job_title))
-                        .setMessage(getString(R.string.finish_job_message))
-                        .setPositiveButton(getString(R.string.finish)) { _, _ ->
+                        .setTitle("Finish Job?")
+                        .setMessage("Are you sure you want to finish this job?")
+                        .setPositiveButton("Finish") { _, _ ->
                             itemView.animate()
                                 .alpha(0f)
                                 .setDuration(200)
                                 .withEndAction {
-                                    finishJob(job.id.toString())
+                                    handleFinishJob(job)
                                     itemView.alpha = 1f
                                 }
                                 .start()
                         }
-                        .setNegativeButton(getString(R.string.cancel)) { _, _ ->
+                        .setNegativeButton("Cancel") { _, _ ->
                             jobAdapter.notifyItemChanged(position)
                         }
                         .setOnCancelListener {
@@ -335,8 +481,15 @@ class AvailableJobsFragment : Fragment() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun loadJobs() {
         showLoading(true)
-        val recruitingService = RetrofitClient.getRecruitingService(requireContext())
-        recruitingService.getAllJobOffers()
+        val prefs = SharedPreferencesManager.getInstance(requireContext())
+        val token = prefs.getAuthToken()
+        if (token.isNullOrEmpty() || prefs.isTokenExpired()) {
+            showLoading(false)
+            showSessionExpiredDialog()
+            return
+        }
+        val apiService = RetrofitClient.getJobClient(token).create(com.example.onetechbs.network.ApiService::class.java)
+        apiService.getAllJobOffers()
             .enqueue(object : Callback<List<JobOfferResponseDTO>> {
                 override fun onResponse(
                     call: Call<List<JobOfferResponseDTO>>,
@@ -345,8 +498,15 @@ class AvailableJobsFragment : Fragment() {
                     showLoading(false)
                     if (response.isSuccessful) {
                         val jobs = response.body() ?: emptyList()
-                        updateJobsList(jobs)
+                        allJobs = jobs
+                        // Populate department dropdown dynamically
+                        populateDepartmentsDropdown(jobs)
+                        applyFilters()
                     } else {
+                        if (response.code() == 401) {
+                            showSessionExpiredDialog()
+                            return
+                        }
                         handleApiError(response.code())
                     }
                 }
@@ -362,9 +522,43 @@ class AvailableJobsFragment : Fragment() {
         swipeRefreshLayout.isRefreshing = show
     }
 
-    private fun updateJobsList(jobs: List<JobOfferResponseDTO>) {
-        jobAdapter.submitList(jobs)
-        updateEmptyState(jobs.isEmpty())
+    private fun applyFilters() {
+        val q = currentFilter.query.trim().lowercase()
+        val dept = currentFilter.department?.lowercase()
+        val exp = currentFilter.experience?.lowercase()
+        val status = currentFilter.status?.lowercase()
+
+        val filtered = allJobs.filter { job ->
+            val fields = listOf(
+                job.title,
+                job.department,
+                job.description,
+                job.role
+            ).map { it?.lowercase().orEmpty() } +
+                (job.responsibilities ?: emptyList()).map { it.lowercase() } +
+                (job.qualificationsRequired ?: emptyList()).map { it.lowercase() } +
+                (job.qualificationsPreferred ?: emptyList()).map { it.lowercase() }
+
+            val matchesQuery = q.isEmpty() || fields.any { it.contains(q) }
+            val matchesDept = dept == null || job.department?.equals(currentFilter.department, true) == true
+            val td = "${job.title} ${job.description}".lowercase()
+            val inferredLevel = when {
+                td.contains("junior") -> "junior"
+                td.contains("senior") -> "senior"
+                td.contains("mid") || td.contains("middle") || td.contains("intermediate") -> "mid"
+                else -> null
+            }
+            val matchesExp = exp == null || (inferredLevel != null && inferredLevel.equals(exp, true))
+            val matchesStatus = status == null ||
+                job.status?.equals(currentFilter.status, true) == true ||
+                // Some backends use "Finished" instead of CLOSED
+                (currentFilter.status.equals("CLOSED", true) && job.status.equals("Finished", true))
+
+            matchesQuery && matchesDept && matchesExp && matchesStatus
+        }
+
+        jobAdapter.submitList(filtered)
+        updateEmptyState(filtered.isEmpty())
     }
 
     private fun updateEmptyState(isEmpty: Boolean) {
@@ -372,220 +566,196 @@ class AvailableJobsFragment : Fragment() {
         recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
     }
 
+    private fun populateDepartmentsDropdown(jobs: List<JobOfferResponseDTO>) {
+        val deptInput = rootView?.findViewById<AutoCompleteTextView>(R.id.autoDepartment) ?: return
+        val depts = buildList {
+            add("All departments")
+            addAll(jobs.mapNotNull { it.department }.distinct().sorted())
+        }
+        val adapter = AndroidArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, depts)
+        deptInput.setAdapter(adapter)
+    }
+
+    // --- Placeholder action handlers to resolve unresolved references ---
+    private fun handleDeleteJob(job: JobOfferResponseDTO) {
+        // TODO: replace with API call to delete job and refresh list
+        Toast.makeText(requireContext(), "Delete job: ${'$'}{job.title}", Toast.LENGTH_SHORT).show()
+        // Optimistically remove from adapter list
+        val list = jobAdapter.currentList.toMutableList()
+        val idx = list.indexOfFirst { it.id == job.id }
+        if (idx >= 0) {
+            list.removeAt(idx)
+            jobAdapter.submitList(list)
+            updateEmptyState(list.isEmpty())
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun handleUpdateJob(job: JobOfferResponseDTO) {
-        val updateFragment = UpdateJobFragment.newInstance(job.id.toString())
+        // Build a small edit dialog with key fields
+        val ctx = requireContext()
+        val container = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(40, 20, 40, 0)
+        }
+        fun editText(hintText: String, prefill: String, multiline: Boolean = false): android.widget.EditText {
+            return android.widget.EditText(ctx).apply {
+                hint = hintText
+                setText(prefill)
+                if (multiline) {
+                    minLines = 3
+                    maxLines = 6
+                    inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                }
+            }
+        }
+        val etTitle = editText("Title", job.title)
+        val etDepartment = editText("Department", job.department)
+        val etRole = editText("Role", job.role ?: "")
+        val etDescription = editText("Description", job.description, multiline = true)
+        val responsibilitiesPrefill = (job.responsibilities ?: emptyList()).joinToString("\n")
+        val etResponsibilities = editText("Responsibilities (one per line)", responsibilitiesPrefill, multiline = true)
+        val qualificationsPrefill = buildList {
+            addAll(job.qualificationsRequired ?: emptyList())
+            addAll(job.qualificationsPreferred ?: emptyList())
+        }.joinToString("\n")
+        val etQualifications = editText("Qualifications (one per line)", qualificationsPrefill, multiline = true)
+        val cbInternal = android.widget.CheckBox(ctx).apply {
+            text = "Internal only"
+            isChecked = job.isInternal
+        }
+        container.addView(etTitle)
+        container.addView(etDepartment)
+        container.addView(etRole)
+        container.addView(etDescription)
+        container.addView(etResponsibilities)
+        container.addView(etQualifications)
+        container.addView(cbInternal)
+
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("Edit job")
+            .setView(container)
+            .setNegativeButton("Close", null)
+            .setPositiveButton("Save") { _, _ ->
+                // Basic validation
+                val title = etTitle.text.toString().trim()
+                val dept = etDepartment.text.toString().trim()
+                val desc = etDescription.text.toString().trim()
+                val role = etRole.text.toString().trim()
+                if (title.isEmpty() || dept.isEmpty() || desc.isEmpty()) {
+                    Toast.makeText(ctx, "Required fields are missing", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val responsibilities = etResponsibilities.text.toString().lines().filter { it.isNotBlank() }.joinToString("; ")
+                val qualifications = etQualifications.text.toString().lines().filter { it.isNotBlank() }.joinToString("; ")
+
+                val request = JobOfferRequest(
+                    title = title,
+                    department = dept,
+                    description = desc,
+                    responsibilities = responsibilities,
+                    qualifications = qualifications,
+                    role = role,
+                    isInternal = cbInternal.isChecked
+                )
+
+                val prefs = SharedPreferencesManager.getInstance(ctx)
+                val token = prefs.getAuthToken()
+                if (token.isNullOrEmpty() || prefs.isTokenExpired()) {
+                    showSessionExpiredDialog()
+                    return@setPositiveButton
+                }
+                // Use job service without auto Authorization and pass token explicitly
+                val api = RetrofitClient.getJobService(ctx)
+                api.updateJobOffer(job.id.toString(), request, "Bearer $token")
+                    .enqueue(object : retrofit2.Callback<Void> {
+                        override fun onResponse(call: retrofit2.Call<Void>, response: retrofit2.Response<Void>) {
+                            if (response.isSuccessful) {
+                                // Update the item locally
+                                val list = jobAdapter.currentList.toMutableList()
+                                val idx = list.indexOfFirst { it.id == job.id }
+                                if (idx >= 0) {
+                                    val updated = list[idx].copy(
+                                        title = title,
+                                        department = dept,
+                                        description = desc,
+                                        role = role
+                                    )
+                                    list[idx] = updated
+                                    jobAdapter.submitList(list)
+                                }
+                                com.google.android.material.snackbar.Snackbar.make(recyclerView, "Job updated", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show()
+                            } else {
+                                if (response.code() == 401) {
+                                    showSessionExpiredDialog()
+                                    return
+                                }
+                                handleApiError(response.code())
+                            }
+                        }
+
+                        override fun onFailure(call: retrofit2.Call<Void>, t: Throwable) {
+                            handleNetworkError(t)
+                        }
+                    })
+            }
+            .show()
+    }
+
+    private fun handleFinishJob(job: JobOfferResponseDTO) {
+        // TODO: call backend to mark as finished, then refresh
+        Toast.makeText(requireContext(), "Finish job: ${'$'}{job.title}", Toast.LENGTH_SHORT).show()
+        // Update status locally if present
+        val list = jobAdapter.currentList.toMutableList()
+        val idx = list.indexOfFirst { it.id == job.id }
+        if (idx >= 0) {
+            val updated = list[idx].copy(status = "Finished")
+            list[idx] = updated
+            jobAdapter.submitList(list)
+        }
+    }
+
+    private fun handleViewApplicants(job: JobOfferResponseDTO) {
+        // Navigate to candidates list for this job
         parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_layout, updateFragment)
+            .replace(
+                R.id.fragment_layout,
+                CandidateListFragment.newInstance(job.id)
+            )
             .addToBackStack(null)
             .commit()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun handleFinishJob(job: JobOfferResponseDTO) {
+    private fun confirmAndCancelApplication(job: JobOfferResponseDTO) {
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle(getString(R.string.finish_job_title))
-            .setMessage(getString(R.string.finish_job_message))
-            .setPositiveButton(getString(R.string.finish)) { _, _ ->
-                finishJob(job.id.toString())
+            .setTitle("Cancel Application")
+            .setMessage("Are you sure you want to cancel your application for this job?")
+            .setPositiveButton("Cancel") { _, _ ->
+                // TODO: call backend to cancel application
+                Toast.makeText(requireContext(), "Application canceled", Toast.LENGTH_SHORT).show()
+                // Track canceled state locally so buttons update
+                appliedJobIds.remove(job.id ?: -1L)
+                jobAdapter.updateAppliedJobs(appliedJobIds)
             }
-            .setNegativeButton(getString(R.string.cancel), null)
+            .setNegativeButton("Close", null)
             .show()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun finishJob(jobId: String) {
-        val token = SharedPreferencesManager.getInstance(requireContext()).getAuthToken()
-
-        if (token.isNullOrEmpty()) {
-            showSessionExpiredDialog()
-            return
-        }
-
-        showLoading(true)
-
-        val recruitingService = RetrofitClient.getRecruitingService(requireContext())
-        recruitingService.toggleJobOfferStatus(
-            jobId = jobId,
-            status = "CLOSED", // must be one of: OPEN, CLOSED, CONVERTED_TO_EXTERNAL, CONVERTED_TO_INTERNAL
-            token = "Bearer $token"
-        ).enqueue(object : Callback<Void> {
-            override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                showLoading(false)
-                if (response.isSuccessful) {
-                    showSuccess(getString(R.string.job_finished_success))
-                    loadJobs()
-                } else if (response.code() == 401) {
-                    showSessionExpiredDialog()
-                } else {
-                    handleApiError(response.code())
-                }
-            }
-
-            override fun onFailure(call: Call<Void>, t: Throwable) {
-                showLoading(false)
-                handleNetworkError(t)
-            }
-        })
-    }
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun handleDeleteJob(job: JobOfferResponseDTO) {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(getString(R.string.delete_job_title))
-            .setMessage(getString(R.string.delete_job_message))
-            .setPositiveButton(getString(R.string.delete)) { _, _ ->
-                deleteJob(job.id.toString())
-            }
-            .setNegativeButton(getString(R.string.cancel), null)
-            .show()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun deleteJob(jobId: String) {
-        showLoading(true)
-        val recruitingService = RetrofitClient.getRecruitingService(requireContext())
-        recruitingService.deleteJobOffer(jobId)
-            .enqueue(object : Callback<Void> {
-                override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                    showLoading(false)
-                    if (response.isSuccessful) {
-                        showSuccess(getString(R.string.job_deleted_success))
-                        loadJobs()
-                    } else {
-                        handleApiError(response.code())
-                    }
-                }
-
-                override fun onFailure(call: Call<Void>, t: Throwable) {
-                    showLoading(false)
-                    handleNetworkError(t)
-                }
-            })
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-
-    private fun handleViewApplicants(job: JobOfferResponseDTO) {
-        val prefsManager = SharedPreferencesManager.getInstance(requireContext())
-
-        if (prefsManager.isTokenExpired()) {
-            showSessionExpiredDialog()
-            return
-        }
-
-        val token = prefsManager.getAuthToken()
-        if (token.isNullOrEmpty()) {
-            showSessionExpiredDialog()
-            return
-        }
-
-        val authHeader = "Bearer $token"
-        showLoading(true)
-
-        RetrofitClient.candidateService.listCandidates(authHeader).enqueue(object : Callback<List<CandidateResponseDTO>> {
-            override fun onResponse(
-                call: Call<List<CandidateResponseDTO>>,
-                response: Response<List<CandidateResponseDTO>>
-            ) {
-                showLoading(false)
-                if (response.isSuccessful) {
-                    val candidates = response.body() ?: emptyList()
-                    showCandidatesDialog(candidates)
-                } else if (response.code() == 401) {
-                    showSessionExpiredDialog()
-                } else {
-                    handleApiError(response.code())
-                }
-            }
-
-            override fun onFailure(call: Call<List<CandidateResponseDTO>>, t: Throwable) {
-                showLoading(false)
-                handleNetworkError(t)
-            }
-        })
-    }private fun showCandidatesDialog(candidates: List<CandidateResponseDTO>) {
-        if (candidates.isEmpty()) {
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle(getString(R.string.applicants))
-                .setMessage(getString(R.string.no_applicants))
-                .setPositiveButton(getString(R.string.close), null)
-                .show()
-            return
-        }
-
-        val message = buildString {
-            append("Showing all candidates.\n\n") // visual cue
-            candidates.forEach { candidate ->
-                append("${candidate.candidateInfo.name} - ${candidate.candidateInfo.email}\n")
-            }
-        }
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(getString(R.string.applicants))
-            .setMessage(message)
-            .setPositiveButton(getString(R.string.close), null)
-            .show()
-    }
-    private fun handleApiError(code: Int) {
-        val message = when (code) {
-            401 -> getString(R.string.error_unauthorized)
-            403 -> getString(R.string.error_forbidden)
-            404 -> getString(R.string.error_not_found)
-            else -> getString(R.string.error_generic)
-        }
-        showError(message)
-    }
-
-    private fun handleNetworkError(throwable: Throwable) {
-        Log.e(TAG, "Network error", throwable)
-        val message = when {
-            throwable.message?.contains("timeout") == true -> getString(R.string.error_timeout)
-            !isNetworkAvailable() -> getString(R.string.error_no_internet)
-            else -> getString(R.string.error_network)
-        }
-        showError(message)
-    }
     private fun showSessionExpiredDialog() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Session Expired")
             .setMessage("Your session has expired. Please log in again.")
-            .setCancelable(false)
-            .setPositiveButton("Login") { _, _ ->
-                SharedPreferencesManager.getInstance(requireContext()).clearAuthData()
-                val intent = Intent(requireContext(), LoginActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-            }
+            .setPositiveButton("Close") { _, _ -> /* TODO: navigate to login */ }
             .show()
     }
 
-    private fun isNetworkAvailable(): Boolean {
-        val connectivityManager = requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
-        val networkCapabilities = connectivityManager.activeNetwork ?: return false
-        val actNw = connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
-        return actNw.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    private fun handleApiError(code: Int) {
+        Log.e("AvailableJobs", "API error: code=${'$'}code")
+        Toast.makeText(requireContext(), "An error occurred", Toast.LENGTH_SHORT).show()
     }
 
-    private fun showError(message: String) {
-        Log.e(TAG, message)
-        showMessage(message)
-    }
-
-    private fun showSuccess(message: String) {
-        showMessage(message)
-    }
-
-    private fun showMessage(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        unregisterShakeListener()
-        undoTimer?.cancel()
-        rootView = null
-    }
-
-    companion object {
-        private const val TAG = "AvailableJobsFragment"
+    private fun handleNetworkError(t: Throwable) {
+        Log.e("AvailableJobs", "Network error", t)
+        Toast.makeText(requireContext(), "Network error", Toast.LENGTH_SHORT).show()
     }
 }

@@ -16,9 +16,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.onetechbs.db.JobOfferResponseDTO
+import com.example.onetechbs.db.RefreshRequest
 import com.example.onetechbs.network.ResumeService
 import com.example.onetechbs.network.RetrofitClient
 import com.example.onetechbs.util.SharedPreferencesManager
@@ -73,7 +75,7 @@ class JobOfferDetailsFragment : Fragment() {
         view.findViewById<TextView>(R.id.tvJobDepartment).text = jobOffer.department
         view.findViewById<TextView>(R.id.tvJobDescription).text = jobOffer.description
 
-                        val toolbar: MaterialToolbar = view.findViewById(R.id.toolbar)
+        val toolbar: MaterialToolbar = view.findViewById(R.id.toolbar)
         toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
@@ -140,22 +142,85 @@ class JobOfferDetailsFragment : Fragment() {
     
                     lifecycleScope.launch {
                         try {
-                            val response = RetrofitClient.apiService.createApplication(
+                            val service = RetrofitClient.getRecruitingService(requireContext())
+                            val response = service.createApplication(
                                 jobOfferId = jobOffer.id,
                                 resume = resumePart,
                                 authHeader = "Bearer $token"
                             )
                             
                             if (response.isSuccessful) {
-                                Toast.makeText(
-                                    context,
-                                    "Application submitted successfully",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                // Haptic feedback (if available)
+                                try {
+                                    val vibrator = ContextCompat.getSystemService(requireContext(), android.os.Vibrator::class.java)
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                        vibrator?.vibrate(android.os.VibrationEffect.createOneShot(60, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                                    } else {
+                                        @Suppress("DEPRECATION")
+                                        vibrator?.vibrate(60)
+                                    }
+                                } catch (_: Exception) {}
+                                // Notify list to update button state
+                                parentFragmentManager.setFragmentResult(
+                                    "application_result",
+                                    android.os.Bundle().apply { putLong("applied_job_id", jobOffer.id) }
+                                )
+                                Toast.makeText(context, "Application submitted successfully", Toast.LENGTH_SHORT).show()
+                                // Navigate back to jobs list
+                                requireActivity().onBackPressedDispatcher.onBackPressed()
                             } else {
+                                val code = response.code()
+                                val msg = response.message()
+                                val body = try { response.errorBody()?.string() } catch (_: Exception) { null }
+                                if (code == 401) {
+                                    // Try to refresh token and retry once
+                                    val spm = SharedPreferencesManager.getInstance(requireContext())
+                                    val refresh = spm.getRefreshToken()
+                                    if (!refresh.isNullOrEmpty()) {
+                                        val refreshResp = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            try {
+                                                com.example.onetechbs.network.RetrofitClient.authService
+                                                    .refreshToken(com.example.onetechbs.db.RefreshRequest(refresh))
+                                                    .execute()
+                                            } catch (e: Exception) { null }
+                                        }
+                                        if (refreshResp != null && refreshResp.isSuccessful) {
+                                            val jwt = refreshResp.body()
+                                            if (jwt != null) {
+                                                val now = System.currentTimeMillis()
+                                                val accessExp = now + (jwt.accessExpiration ?: 0L)
+                                                val refreshExp = now + (jwt.refreshExpiration ?: 0L)
+                                                spm.saveAuthToken(jwt.accessToken ?: "", accessExp)
+                                                spm.saveRefreshToken(jwt.refreshToken ?: "", refreshExp)
+                                                // Update explicit header token and retry
+                                                val newToken = spm.getAuthToken()
+                                                val retryService = com.example.onetechbs.network.RetrofitClient.getRecruitingService(requireContext())
+                                                val retry = retryService.createApplication(
+                                                    jobOfferId = jobOffer.id,
+                                                    resume = resumePart,
+                                                    authHeader = "Bearer ${newToken}"
+                                                )
+                                                if (retry.isSuccessful) {
+                                                    parentFragmentManager.setFragmentResult(
+                                                        "application_result",
+                                                        android.os.Bundle().apply { putLong("applied_job_id", jobOffer.id) }
+                                                    )
+                                                    Toast.makeText(context, "Application submitted successfully", Toast.LENGTH_SHORT).show()
+                                                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                                                    return@launch
+                                                } else {
+                                                    val rcode = retry.code()
+                                                    val rbody = try { retry.errorBody()?.string() } catch (_: Exception) { null }
+                                                    Toast.makeText(context, "Submission failed ($rcode): ${rbody ?: retry.message()}", Toast.LENGTH_SHORT).show()
+                                                    return@launch
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                                 Toast.makeText(
                                     context,
-                                    "Submission failed: ${response.message()}",
+                                    "Submission failed ($code): ${body ?: msg}",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }

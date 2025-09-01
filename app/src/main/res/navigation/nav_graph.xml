@@ -87,6 +87,9 @@
         <action
             android:id="@+id/action_homefraFragment_to_leaveListFragment"
             app:destination="@id/leaveListFragment" />
+        <action
+            android:id="@+id/action_homefraFragment_to_addLeaveFragment"
+            app:destination="@id/addLeaveFragment" />
     </fragment>
 
     <fragment
@@ -94,4 +97,59 @@
         android:name="com.example.onetechbs.LeaveListFragment"
         android:label="Leave List"
         tools:layout="@layout/fragment_leave_list" />
+
+    <fragment
+        android:id="@+id/addLeaveFragment"
+        android:name="com.example.onetechbs.AddLeaveFragment"
+        android:label="Add Leave"
+        tools:layout="@layout/fragment_add_leave" />
+
+    <!-- Job Offer Creation Workflow -->
+    <fragment
+        android:id="@+id/detailsFragment"
+        android:name="com.example.onetechbs.DetailsFragment"
+        android:label="Job Details"
+        tools:layout="@layout/fragment_job_details">
+        <action
+            android:id="@+id/action_detailsFragment_to_descriptionFragment"
+            app:destination="@id/descriptionFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/descriptionFragment"
+        android:name="com.example.onetechbs.DescriptionFragment"
+        android:label="Job Description"
+        tools:layout="@layout/fragment_job_description">
+        <action
+            android:id="@+id/action_descriptionFragment_to_evaluationFragment"
+            app:destination="@id/evaluationFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/evaluationFragment"
+        android:name="com.example.onetechbs.EvaluationFragment"
+        android:label="Evaluation Criteria"
+        tools:layout="@layout/fragment_evaluation">
+        <action
+            android:id="@+id/action_evaluationFragment_to_reviewFragment"
+            app:destination="@id/reviewFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/reviewFragment"
+        android:name="com.example.onetechbs.ReviewFragment"
+        android:label="Review &amp; Submit"
+        tools:layout="@layout/fragment_review" />
 </navigation>

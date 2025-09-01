@@ -43,21 +43,46 @@ class LeaveListAdapter : ListAdapter<LeaveResponse, LeaveListAdapter.LeaveViewHo
             binding.apply {
                 employeeName.text = leave.name
                 leaveType.text = leave.leaveType.toString()
-                dateRange.text = "${leave.startDate.format(dateFormatter)} - ${leave.endDate.format(dateFormatter)}"
+                val rangeText = "${leave.startDate.format(dateFormatter)} - ${leave.endDate.format(dateFormatter)}"
+                dateRange.text = rangeText
 
                 btnApprove.visibility = View.GONE
                 btnReject.visibility = View.GONE
 
-                // Set status text and color
+                // Status as Chip with semantic colors
                 status.text = leave.status.toString()
-                status.setBackgroundResource(
-                    when (leave.status) {
-                        EStatus.APPROVED -> android.R.color.holo_green_light
-                        EStatus.REJECTED -> android.R.color.holo_red_light
-                        EStatus.PENDING -> android.R.color.holo_orange_light
-                        else -> android.R.color.darker_gray
-                    }
-                )
+                val ctx = root.context
+                val bgColorRes = when (leave.status) {
+                    EStatus.APPROVED -> android.R.color.holo_green_light
+                    EStatus.REJECTED -> android.R.color.holo_red_light
+                    EStatus.PENDING -> android.R.color.holo_orange_light
+                    else -> android.R.color.darker_gray
+                }
+                val textColor = when (leave.status) {
+                    EStatus.REJECTED -> android.graphics.Color.WHITE
+                    else -> android.graphics.Color.BLACK
+                }
+                // Chip background/text color
+                (status as com.google.android.material.chip.Chip).apply {
+                    setChipBackgroundColorResource(bgColorRes)
+                    setTextColor(textColor)
+                    isClickable = false
+                    isCheckable = false
+                    contentDescription = "Status: ${leave.status}"
+                }
+
+                // Accessibility: summarize the row for TalkBack
+                root.contentDescription = buildString {
+                    append("Leave request. ")
+                    append("Employee: ")
+                    append(leave.name)
+                    append(". Type: ")
+                    append(leave.leaveType.toString())
+                    append(". Dates: ")
+                    append(rangeText)
+                    append(". Status: ")
+                    append(leave.status.toString())
+                }
             }
         }
     }

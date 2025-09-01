@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import com.example.onetechbs.db.*
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.*
@@ -93,6 +94,32 @@ interface ApiService {
 
     @GET("api/v1/users/role")
     fun getEmployeeRole(@Query("username") username: String): Call<String>
+    // ✅ Get user by username
+    @GET("api/v1/users/username")
+    suspend fun getUserByUsername(
+        @Query("username") username: String
+    ): Response<UserResponseDTO>
+
+    // ✅ Get profile picture
+    @GET("api/v1/users/profilePicture")
+    suspend fun getProfilePicture(
+        @Query("username") username: String
+    ): Response<ResponseBody>
+
+    // ✅ Update user info (multipart for picture upload support)
+    @Multipart
+    @PATCH("api/v1/users/update")
+    suspend fun updateUserInfo(
+        @Part("firstName") firstName: RequestBody,
+        @Part("lastName") lastName: RequestBody,
+        @Part("email") email: RequestBody,
+        @Part("jobTitle") jobTitle: RequestBody,
+        @Part("phoneNumber1") phoneNumber1: RequestBody,
+        @Part("phoneNumber2") phoneNumber2: RequestBody?,
+        @Part("gender") gender: RequestBody?,
+        @Part("birthDate") birthDate: RequestBody?,
+        @Part picture: MultipartBody.Part? = null
+    ): Response<MessageResponseDTO>
 
     // ─────────────────────────────────────────────────────────────
     // 📅 LEAVE MANAGEMENT
@@ -227,15 +254,19 @@ interface ApiService {
     fun getAllJobOffers(): Call<List<JobOfferResponseDTO>>
 
     @GET("api/v1/job-offers/{jobId}")
-    fun getJobOfferById(@Path("jobId") id: Long): Call<JobOfferRequest>
+    fun getJobOfferById(@Path("jobId") id: Long): Call<JobOfferResponseDTO>
 
     @POST("api/v1/job-offers")
     fun createJobOffer(@Body request: JobOfferRequest): Call<Void>
 
+    @POST("api/v1/job-offers")
+    suspend fun createJobOfferNew(@Body request: com.example.onetechbs.db.JobOfferRequestDTO): retrofit2.Response<Void>
+
     @PUT("api/v1/job-offers/{id}")
     fun updateJobOffer(
         @Path("id") id: String,
-        @Body jobOfferRequestDTO: JobOfferRequest
+        @Body jobOfferRequestDTO: JobOfferRequest,
+        @Header("Authorization") token: String
     ): Call<Void>
 
     @PUT("api/v1/job-offers/{id}/status")
@@ -262,6 +293,12 @@ interface ApiService {
         @Header("Authorization") authHeader: String
     ): Response<Void>
 
+    // Cancel internal application
+    @DELETE("api/v1/internal-applications/cancel/{jobOfferId}")
+    suspend fun cancelApplication(
+        @Path("jobOfferId") jobOfferId: Long,
+        @Header("Authorization") authHeader: String
+    ): Response<Void>
 
     @POST("/api/v1/candidates")
     fun addCandidate(@Body request: CandidateRequestDTO): Call<CandidateResponseDTO>

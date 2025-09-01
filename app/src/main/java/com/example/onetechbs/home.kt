@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import com.example.onetechbs.databinding.ActivityHomeBinding
 import com.google.android.material.navigation.NavigationView
 import androidx.fragment.app.FragmentManager
+import com.example.onetechbs.DetailsFragment
 
 class home : AppCompatActivity() {
     private lateinit var binding: ActivityHomeBinding
@@ -76,7 +77,7 @@ class home : AppCompatActivity() {
     private fun setupDrawerNavigation() {
         // Set initial selected item
         navigationView.menu.findItem(R.id.nav_home)?.isChecked = true
-        
+
         navigationView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
     R.id.nav_logout -> {
@@ -98,7 +99,7 @@ class home : AppCompatActivity() {
                 }
 
                 R.id.nav_internal_recruiting -> {
-                    if (isHR()) replaceFragment(InternalRecruitingFragment())
+                    if (isHR()) replaceFragment(DetailsFragment())
                     else showAccessDenied()
                 }
 
@@ -142,7 +143,7 @@ class home : AppCompatActivity() {
 //                }
 
                 R.id.nav_leaves_management -> {
-                    if (isManager()) replaceFragment(HRLeaveManagementFragment())
+                    if (isManager() || isHRD()) replaceFragment(HRLeaveManagementFragment())
                     else showAccessDenied()
                 }
                 R.id.nav_internal_documents_list -> {
@@ -223,8 +224,8 @@ class home : AppCompatActivity() {
     }
 
     private fun setupHRNavigation(navMenu: android.view.Menu) {
-        // HR: profile, leaves, Available Jobs, Doctor, Doctor Management, course List, 
-        // Enrolment, Attendance Management, Documents, Internal Documents List, 
+        // HR: profile, leaves, Available Jobs, Doctor, Doctor Management, course List,
+        // Enrolment, Attendance Management, Documents, Internal Documents List,
         // Treat Personal Documents, Internal Recruiting, Notification and logout
         navMenu.findItem(R.id.nav_profile)?.isVisible = true
         navMenu.findItem(R.id.nav_leaves)?.isVisible = true
@@ -243,8 +244,8 @@ class home : AppCompatActivity() {
     }
 
     private fun setupManagerNavigation(navMenu: android.view.Menu) {
-        // Manager: profile, leaves, Available Jobs, Doctor, courses list, 
-        // course Propositions, course proposition list, leave manager, 
+        // Manager: profile, leaves, Available Jobs, Doctor, courses list,
+        // course Propositions, course proposition list, leave manager,
         // documents, internal Documents list, notification and logout
         navMenu.findItem(R.id.nav_profile)?.isVisible = true
         navMenu.findItem(R.id.nav_leaves)?.isVisible = true
@@ -261,9 +262,9 @@ class home : AppCompatActivity() {
     }
 
     private fun setupHRDNavigation(navMenu: android.view.Menu) {
-        // HRD: profile, leaves, Available Jobs, Doctor, Enrolments, 
-        // course Proposition List, course List, Create Course, Attendance management, 
-        // documents, internal documents, internal documents List, 
+        // HRD: profile, leaves, Available Jobs, Doctor, Enrolments,
+        // course Proposition List, course List, Create Course, Attendance management,
+        // documents, internal documents, internal documents List,
         // treat personal Documents, notification and logout
         navMenu.findItem(R.id.nav_profile)?.isVisible = true
         navMenu.findItem(R.id.nav_leaves)?.isVisible = true
@@ -283,7 +284,7 @@ class home : AppCompatActivity() {
     }
 
     private fun setupEmployeeNavigation(navMenu: android.view.Menu) {
-        // Employee: profile, leaves, Available Jobs, Doctor, course list, 
+        // Employee: profile, leaves, Available Jobs, Doctor, course list,
         // internal Documents, documents, notification and logout
         navMenu.findItem(R.id.nav_profile)?.isVisible = true
         navMenu.findItem(R.id.nav_leaves)?.isVisible = true

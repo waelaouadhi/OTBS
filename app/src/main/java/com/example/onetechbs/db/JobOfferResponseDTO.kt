@@ -2,23 +2,26 @@ package com.example.onetechbs.db
 
 import android.os.Parcel
 import android.os.Parcelable
-import java.time.LocalDateTime
+import com.google.gson.annotations.SerializedName
 
 data class JobOfferResponseDTO(
     val id: Long,
     val title: String,
-    val description: String,
+    @SerializedName("summary") val description: String,
     val department: String,
-    val responsibilities: String,
-    val qualifications: String,
-    val role: String,
-    val isApplied: Boolean,
+    val responsibilities: List<String>?,
+    @SerializedName("qualifications_required") val qualificationsRequired: List<String>?,
+    @SerializedName("qualifications_preferred") val qualificationsPreferred: List<String>?,
+    val role: String?,
+    @SerializedName(value = "isApplied", alternate = ["applied"]) val isApplied: Boolean,
     val numberOfApplications: Int,
     val status: String,
-    val applicationStatus: String,
+    val applicationStatus: String?,
     val isInternal: Boolean,
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime
+    @SerializedName("createdAt") val createdAt: String,
+    @SerializedName("updatedAt") val updatedAt: String,
+    @SerializedName("what_we_offer") val whatWeOffer: String? = null,
+    val criteria: List<CriterionDTO>? = null
 ) : Parcelable {
 
     override fun describeContents(): Int {
@@ -30,16 +33,19 @@ data class JobOfferResponseDTO(
         dest.writeString(title)
         dest.writeString(description)
         dest.writeString(department)
-        dest.writeString(responsibilities)
-        dest.writeString(qualifications)
+        dest.writeStringList(responsibilities ?: emptyList())
+        dest.writeStringList(qualificationsRequired ?: emptyList())
+        dest.writeStringList(qualificationsPreferred ?: emptyList())
         dest.writeString(role)
         dest.writeByte(if (isApplied) 1 else 0)
         dest.writeInt(numberOfApplications)
         dest.writeString(status)
         dest.writeString(applicationStatus)
         dest.writeByte(if (isInternal) 1 else 0)
-        dest.writeSerializable(createdAt)
-        dest.writeSerializable(updatedAt)
+        dest.writeString(createdAt)
+        dest.writeString(updatedAt)
+        dest.writeString(whatWeOffer)
+        // criteria omitted in parcel for brevity
     }
 
     companion object CREATOR : Parcelable.Creator<JobOfferResponseDTO> {
@@ -49,16 +55,19 @@ data class JobOfferResponseDTO(
                 parcel.readString() ?: "",
                 parcel.readString() ?: "",
                 parcel.readString() ?: "",
-                parcel.readString() ?: "",
-                parcel.readString() ?: "",
-                parcel.readString() ?: "",
+                mutableListOf<String>().apply { parcel.readStringList(this) },
+                mutableListOf<String>().apply { parcel.readStringList(this) },
+                mutableListOf<String>().apply { parcel.readStringList(this) },
+                parcel.readString(),
                 parcel.readByte() != 0.toByte(),
                 parcel.readInt(),
                 parcel.readString() ?: "",
-                parcel.readString() ?: "",
+                parcel.readString(),
                 parcel.readByte() != 0.toByte(),
-                parcel.readSerializable() as LocalDateTime,
-                parcel.readSerializable() as LocalDateTime
+                parcel.readString() ?: "",
+                parcel.readString() ?: "",
+                parcel.readString(),
+                null
             )
         }
 

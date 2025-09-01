@@ -27,6 +27,12 @@
     <string name="first_fragment_label">First Fragment</string>
     <string name="second_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
+    <string name="apply_now">Apply</string>
+    <string name="cancel_application_title">Cancel application?</string>
+    <string name="cancel_application_message">Are you sure you want to cancel your application for this job?</string>
+    <string name="error_not_authenticated">You need to login before performing this action.</string>
+    <string name="application_canceled_success">Application canceled</string>
+    <string name="failed">Failed</string>
     <string name="doctor_management">Doctor Management</string>
     <string name="search_doctors">Search doctors…</string>
     <string name="no_doctors_found">No Doctors Found</string>
@@ -92,7 +98,7 @@
 
     <!-- Error Messages -->
     <string name="error_unauthorized">Please log in again to continue</string>
-    <string name="error_forbidden">You don\'t have permission to perform this action</string>
+    <string name="error_forbidden">You do not have permission to perform this action</string>
     <string name="error_not_found">The requested job was not found</string>
     <string name="error_generic">Something went wrong. Please try again.</string>
     <string name="error_timeout">Request timed out. Please check your connection.</string>
@@ -106,4 +112,31 @@
     <string name="training_description">Training Description</string>
     <string name="training_title">Training Title</string>
     <string name="no_date_range_selected">No date range selected</string>
+
+    <!-- Candidates sorting -->
+    <string name="candidate_sort_newest">Newest first</string>
+    <string name="candidate_sort_oldest">Oldest first</string>
+    <string-array name="candidate_sort_options">
+        <item>@string/candidate_sort_newest</item>
+        <item>@string/candidate_sort_oldest</item>
+    </string-array>
+
+    <string name="employee_avatar">Employee avatar</string>
+    <string name="leave_date_range">Leave date range</string>
+    <string name="document_request_title"> My Document </string>
+
+    <!-- Available Jobs Filters -->
+    <string name="filters">Filters</string>
+    <string name="toggle_filters">Toggle filters</string>
+    <string name="reset_filters">Reset filters</string>
+    <string name="search_hint_jobs">Search title, department, description, skills…</string>
+    <string name="department_hint">Department</string>
+    <string name="department_all_hint">All departments</string>
+    <string name="experience_all">All levels</string>
+    <string name="experience_junior">Junior</string>
+    <string name="experience_mid">Mid</string>
+    <string name="experience_senior">Senior</string>
+    <string name="status_all">All status</string>
+    <string name="status_open">Open</string>
+    <string name="status_finished">Finished</string>
 </resources>

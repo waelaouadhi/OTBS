@@ -25,6 +25,8 @@ import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.time.OffsetDateTime
+import java.time.format.DateTimeParseException
 
 class NotificationFragment : Fragment() {
 
@@ -33,6 +35,11 @@ class NotificationFragment : Fragment() {
     private val notificationAdapter = NotificationAdapter()
     private val TAG = "NotificationFragment"
     private lateinit var sharedPreferencesManager: SharedPreferencesManager
+
+    private var allNotifications: List<Notification> = emptyList()
+    private var currentFilter: Filter = Filter.ALL
+
+    private enum class Filter { ALL, UNREAD, LEAVE, MEDICAL, TRAINING, DOCUMENTS, SYSTEM, OTHER }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -44,6 +51,8 @@ class NotificationFragment : Fragment() {
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext())
 
         setupRecyclerView()
+        setupFilters()
+        setupSwipeRefresh()
         loadNotifications()
 
         binding.markAllReadButton.setOnClickListener {
@@ -61,16 +70,69 @@ class NotificationFragment : Fragment() {
         }
     }
 
+    private fun setupSwipeRefresh() {
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            loadNotifications()
+        }
+    }
+
+    private fun setupFilters() {
+        val chips = mapOf(
+            Filter.ALL to binding.chipAll,
+            Filter.UNREAD to binding.chipUnread,
+            Filter.LEAVE to binding.chipLeave,
+            Filter.MEDICAL to binding.chipMedical,
+            Filter.TRAINING to binding.chipTraining,
+            Filter.DOCUMENTS to binding.chipDocuments,
+            Filter.SYSTEM to binding.chipSystem,
+            Filter.OTHER to binding.chipOther,
+        )
+        chips.forEach { (filter, chip) ->
+            chip.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    currentFilter = filter
+                    applyFilter()
+                }
+            }
+        }
+    }
+
+    private fun applyFilter() {
+        val filtered = when (currentFilter) {
+            Filter.ALL -> allNotifications
+            Filter.UNREAD -> allNotifications.filter { !it.read }
+            Filter.LEAVE -> allNotifications.filter { it.type.contains("LEAVE", true) || it.type.contains("ABSENCE", true) }
+            Filter.MEDICAL -> allNotifications.filter { it.type.contains("MEDICAL", true) || it.type.contains("DOCTOR", true) }
+            Filter.TRAINING -> allNotifications.filter { it.type.contains("TRAIN", true) || it.type.contains("COURSE", true) || it.type.contains("LEARNING", true) }
+            Filter.DOCUMENTS -> allNotifications.filter { it.type.contains("DOC", true) }
+            Filter.SYSTEM -> allNotifications.filter { it.type.contains("SYSTEM", true) || it.type.contains("ALERT", true) }
+            Filter.OTHER -> allNotifications.filter {
+                val t = it.type.uppercase()
+                !(t.contains("LEAVE") || t.contains("ABSENCE") || t.contains("MEDICAL") || t.contains("DOCTOR") || t.contains("TRAIN") || t.contains("COURSE") || t.contains("LEARNING") || t.contains("DOC") || t.contains("SYSTEM") || t.contains("ALERT"))
+            }
+        }
+        notificationAdapter.submitList(filtered)
+        binding.emptyView.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+    }
+
     private fun loadNotifications() {
         Log.d(TAG, "Loading notifications...")
+        binding.swipeRefreshLayout.isRefreshing = true
         lifecycleScope.launch {
             val notifications = fetchNotifications()
             Log.d(TAG, "Fetched ${notifications.size} notifications")
 
-            notificationAdapter.submitList(notifications)
+            // Sort by createdAt desc if parsable; fallback to original
+            allNotifications = notifications.sortedByDescending {
+                try {
+                    OffsetDateTime.parse(it.createdAt)
+                } catch (e: DateTimeParseException) {
+                    OffsetDateTime.MIN
+                }
+            }
 
-            binding.emptyView.visibility = if (notifications.isEmpty()) View.VISIBLE else View.GONE // emptyView is now a TextView
-            Log.d(TAG, if (notifications.isEmpty()) "No notifications available" else "Displaying notifications")
+            applyFilter()
+            binding.swipeRefreshLayout.isRefreshing = false
         }
     }
 
@@ -97,7 +159,7 @@ class NotificationFragment : Fragment() {
             jwtToken = sharedPreferencesManager.getAuthToken() ?: ""
         }
 
-        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://172.31.4.45:8086"
+        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://192.168.1.184:8086"
         val request = Request.Builder()
             .url("$serverUrl/api/v1/notifications")
             .header("Authorization", "Bearer $jwtToken")
@@ -141,7 +203,7 @@ class NotificationFragment : Fragment() {
             return@withContext false
         }
 
-        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://172.31.4.45:8086"
+        val serverUrl = sharedPreferencesManager.getServerUrl() ?: "http://192.168.1.184:8086"
         val refreshUrl = "$serverUrl/api/v1/auth/refresh"
 
         Log.d(TAG, "🔍 DEBUG: Starting JWT refresh operation")

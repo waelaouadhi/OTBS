@@ -22,6 +22,8 @@ import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import android.util.Log
+import com.example.onetechbs.util.SharedPreferencesManager
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -86,6 +88,19 @@ leaveCategoryInput = view.findViewById(R.id.spinnerLeaveCategory)
 btnSubmit = view.findViewById(R.id.submitbtn1)
 progressBar = view.findViewById(R.id.progressBar)
 tvSelectedFile = view.findViewById(R.id.tvSelectedFile)
+
+        // Ensure Authorization header is injected by Retrofit client
+        try {
+            val prefs = SharedPreferencesManager.getInstance(requireContext())
+            val token = prefs.getAuthToken()
+            if (!token.isNullOrBlank()) {
+                RetrofitClient.setAuthToken(token)
+            } else {
+                Log.w("AddLeaveFragment", "No auth token found; requests may fail with 401")
+            }
+        } catch (e: Exception) {
+            Log.e("AddLeaveFragment", "Error loading auth token", e)
+        }
 
         // toolbar back navigation
         view.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener {
@@ -193,7 +208,11 @@ progressBar.visibility = View.GONE
                         Toast.makeText(requireContext(), "Leave submitted", Toast.LENGTH_SHORT).show()
                         parentFragmentManager.popBackStack()
                     } else {
-                        Toast.makeText(requireContext(), "Error: ${response.message()}", Toast.LENGTH_SHORT).show()
+                        if (response.code() == 401) {
+                            Toast.makeText(requireContext(), "Unauthorized. Please log in again.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(requireContext(), "Error: ${response.message()}", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
 
@@ -278,8 +297,13 @@ progressBar.visibility = View.GONE
     }
 
     private fun loadTakenDateRanges(): MutableList<Pair<String, String>> {
+        val userKey = getCurrentUserKey()
+        if (userKey.isNullOrBlank()) {
+            // If we cannot identify the user, do not block any dates.
+            return mutableListOf()
+        }
         val prefs = requireContext().getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
-        val saved = prefs.getString(KEY_TAKEN_RANGES, "") ?: ""
+        val saved = prefs.getString(userRangesKey(userKey), "") ?: ""
         if (saved.isBlank()) return mutableListOf()
         return saved.split(',').mapNotNull { part ->
             val parts = part.split('=')
@@ -288,8 +312,26 @@ progressBar.visibility = View.GONE
     }
 
     private fun saveTakenDateRanges() {
+        val userKey = getCurrentUserKey()
+        if (userKey.isNullOrBlank()) return
         val prefs = requireContext().getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
         val serialized = takenDateRanges.joinToString(",") { "${it.first}=${it.second}" }
-        prefs.edit().putString(KEY_TAKEN_RANGES, serialized).apply()
+        prefs.edit().putString(userRangesKey(userKey), serialized).apply()
     }
+
+    private fun getCurrentUserKey(): String? {
+        val authPrefs = requireContext().getSharedPreferences("auth", android.content.Context.MODE_PRIVATE)
+        // Prefer a stable, unique identifier if available
+        val userId = authPrefs.getString("userId", null)
+        val email = authPrefs.getString("email", null)
+        val username = authPrefs.getString("username", null)
+        return when {
+            !userId.isNullOrBlank() -> "id_" + userId
+            !email.isNullOrBlank() -> "email_" + email
+            !username.isNullOrBlank() -> "username_" + username
+            else -> null
+        }
+    }
+
+    private fun userRangesKey(userKey: String): String = "${KEY_TAKEN_RANGES}_$userKey"
 }

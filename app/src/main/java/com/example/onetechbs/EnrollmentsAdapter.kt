@@ -32,6 +32,8 @@ class EnrollmentsAdapter(
         private val employeeName: TextView = itemView.findViewById(R.id.textViewEmployeeName)
         private val courseTitle: TextView = itemView.findViewById(R.id.textViewCourseTitle)
         private val status: TextView = itemView.findViewById(R.id.textViewRequestStatus)
+        private val requestDate: TextView = itemView.findViewById(R.id.textViewRequestDate)
+        private val reviewDate: TextView = itemView.findViewById(R.id.textViewReviewDate)
         private val btnApprove: Button = itemView.findViewById(R.id.btnApprove)
         private val btnReject: Button = itemView.findViewById(R.id.btnReject)
         private val rejectionReason: TextView = itemView.findViewById(R.id.textViewRejectionReason)
@@ -44,7 +46,20 @@ class EnrollmentsAdapter(
         ) {
             employeeName.text = enrollment.employeeFullName ?: enrollment.employeeId ?: ""
             courseTitle.text = enrollment.course?.title ?: ""
-            status.text = "Status: ${enrollment.status ?: ""}"
+            val st = (enrollment.status ?: "").uppercase()
+            status.text = "Status: $st"
+            // Color code status
+            val color = when (st) {
+                "APPROVED" -> android.R.color.holo_green_dark
+                "PENDING" -> android.R.color.holo_orange_dark
+                "REJECTED" -> android.R.color.holo_red_dark
+                else -> android.R.color.darker_gray
+            }
+            status.setTextColor(itemView.resources.getColor(color))
+
+            // Dates formatting
+            requestDate.text = "Requested: " + formatInstant(enrollment.requestDate)
+            reviewDate.text = "Reviewed: " + formatInstant(enrollment.reviewDate)
 
             // Show rejection reason if rejected
             if (enrollment.status == "REJECTED" && !enrollment.rejectionReason.isNullOrEmpty()) {
@@ -66,6 +81,18 @@ class EnrollmentsAdapter(
                 btnApprove.visibility = View.GONE
                 btnReject.visibility = View.GONE
             }
+        }
+
+        private fun formatInstant(instant: java.time.Instant?): String {
+            if (instant == null) return "-"
+            return try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    val zdt = java.time.ZonedDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
+                    zdt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                } else {
+                    instant.toString()
+                }
+            } catch (e: Exception) { "-" }
         }
     }
 }

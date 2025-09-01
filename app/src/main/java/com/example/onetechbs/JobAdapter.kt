@@ -18,11 +18,20 @@ class JobAdapter(
     private val onDeleteClick: (JobOfferResponseDTO) -> Unit,
     private val onUpdateClick: (JobOfferResponseDTO) -> Unit,
     private val onFinishClick: (JobOfferResponseDTO) -> Unit,
-    private val onApplicantsClick: (JobOfferResponseDTO) -> Unit
+    private val onApplicantsClick: (JobOfferResponseDTO) -> Unit,
+    private val onCancelClick: (JobOfferResponseDTO) -> Unit
 ) : ListAdapter<JobOfferResponseDTO, JobAdapter.JobViewHolder>(JobDiffCallback()) {
 
     // Track which item is currently expanded (-1 means none)
     private var expandedPosition = -1
+
+    // Jobs that current user has applied to (ids)
+    private var appliedJobIds: Set<Long> = emptySet()
+
+    fun updateAppliedJobs(ids: Set<Long>) {
+        appliedJobIds = ids
+        notifyDataSetChanged()
+    }
 
     // Expand an item and collapse any previously expanded item
     private fun expandItem(position: Int) {
@@ -99,20 +108,27 @@ class JobAdapter(
             departmentExpanded.text = job.department
             roleExpanded.text = job.role ?: ""
 
-            // Populate responsibilities (as bullet points)
+            // Populate responsibilities (from list)
             responsibilitiesExpanded.removeAllViews()
-            job.responsibilities?.split("\n", "•", "-")?.map { it.trim() }?.filter { it.isNotEmpty() }?.forEach { resp ->
+            val respList: List<String> = job.responsibilities ?: emptyList()
+            respList.forEach { respItem: String ->
                 val bullet = TextView(itemView.context)
-                bullet.text = "• $resp"
+                bullet.text = "• ${respItem.trim()}"
                 bullet.setTextColor(android.graphics.Color.parseColor("#424242"))
                 bullet.textSize = 14f
                 responsibilitiesExpanded.addView(bullet)
             }
-            // Populate qualifications (as bullet points or paragraph)
+            // Populate qualifications (required + preferred)
             qualificationsExpanded.removeAllViews()
-            job.qualifications?.split("\n", "•", "-")?.map { it.trim() }?.filter { it.isNotEmpty() }?.forEach { qual ->
+            val required: List<String> = job.qualificationsRequired ?: emptyList()
+            val preferred: List<String> = job.qualificationsPreferred ?: emptyList()
+            val qualsList: List<String> = mutableListOf<String>().apply {
+                addAll(required)
+                addAll(preferred)
+            }
+            qualsList.forEach { qualItem: String ->
                 val bullet = TextView(itemView.context)
-                bullet.text = "• $qual"
+                bullet.text = "• ${qualItem.trim()}"
                 bullet.setTextColor(android.graphics.Color.parseColor("#424242"))
                 bullet.textSize = 14f
                 qualificationsExpanded.addView(bullet)
@@ -140,7 +156,8 @@ class JobAdapter(
                 // Show HR buttons, hide employee button
                 btnApplyNow.visibility = View.GONE
                 btnViewApplicants.visibility = View.VISIBLE
-                btnEditJob.visibility = View.VISIBLE
+                // Temporarily hide Edit for safe testing
+                btnEditJob.visibility = View.GONE
             } else {
                 // Show employee button, hide HR buttons
                 btnApplyNow.visibility = View.VISIBLE
@@ -148,28 +165,36 @@ class JobAdapter(
                 btnEditJob.visibility = View.GONE
             }
             
-            // Employee action button
-            btnApplyNow.setOnClickListener {
-                // Navigate to JobOfferDetailsFragment with job data
-                val fragment = com.example.onetechbs.JobOfferDetailsFragment.newInstance(job)
-                val activity = itemView.context as? androidx.fragment.app.FragmentActivity
-                activity?.supportFragmentManager?.beginTransaction()
-                    ?.replace(
-                        (itemView.rootView?.findViewById<ViewGroup>(android.R.id.content)?.id
-                            ?: activity.findViewById<ViewGroup>(android.R.id.content).id),
-                        fragment
-                    )
-                    ?.addToBackStack(null)
-                    ?.commit()
+            // Employee action button: Apply or Cancel based on state
+            if (!isHR) {
+                if (appliedJobIds.contains(job.id)) {
+                    btnApplyNow.text = itemView.context.getString(R.string.cancel)
+                    btnApplyNow.setIconResource(android.R.drawable.ic_menu_close_clear_cancel)
+                    btnApplyNow.setOnClickListener { onCancelClick(job) }
+                } else {
+                    btnApplyNow.text = itemView.context.getString(R.string.apply_now)
+                    btnApplyNow.setIconResource(android.R.drawable.ic_menu_send)
+                    btnApplyNow.setOnClickListener {
+                        val fragment = com.example.onetechbs.JobOfferDetailsFragment.newInstance(job)
+                        val activity = itemView.context as? androidx.fragment.app.FragmentActivity
+                        activity?.supportFragmentManager?.beginTransaction()
+                            ?.replace(
+                                (itemView.rootView?.findViewById<ViewGroup>(android.R.id.content)?.id
+                                    ?: activity.findViewById<ViewGroup>(android.R.id.content).id),
+                                fragment
+                            )
+                            ?.addToBackStack(null)
+                            ?.commit()
+                    }
+                }
             }
             
             // HR action buttons
             btnViewApplicants.setOnClickListener {
                 onApplicantsClick(job)
             }
-            btnEditJob.setOnClickListener {
-                onUpdateClick(job)
-            }
+            // Temporarily disable Edit action for safe testing
+            btnEditJob.setOnClickListener { /* disabled */ }
         }
     }
 

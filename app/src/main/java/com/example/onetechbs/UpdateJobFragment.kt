@@ -11,7 +11,9 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import com.example.onetechbs.db.JobOfferRequest
+import com.example.onetechbs.db.JobOfferResponseDTO
 import com.example.onetechbs.network.RetrofitClient
+import com.example.onetechbs.util.SharedPreferencesManager
 import com.google.android.material.textfield.TextInputEditText
 import retrofit2.Call
 import retrofit2.Callback
@@ -87,35 +89,47 @@ class UpdateJobFragment : Fragment() {
             return
         }
 
-        val recruitingService = RetrofitClient.getRecruitingService(requireContext())
-        recruitingService.getJobOfferById(idLong)
-            .enqueue(object : Callback<JobOfferRequest> {
+        val prefs = SharedPreferencesManager.getInstance(requireContext())
+        val token = prefs.getAuthToken()
+        if (token.isNullOrEmpty() || prefs.isTokenExpired()) {
+            showError("Please log in again to continue")
+            return
+        }
+        val api = RetrofitClient.getJobClient(token).create(com.example.onetechbs.network.ApiService::class.java)
+        api.getJobOfferById(idLong)
+            .enqueue(object : Callback<JobOfferResponseDTO> {
                 override fun onResponse(
-                    call: Call<JobOfferRequest>,
-                    response: Response<JobOfferRequest>
+                    call: Call<JobOfferResponseDTO>,
+                    response: Response<JobOfferResponseDTO>
                 ) {
                     if (response.isSuccessful) {
                         response.body()?.let { job ->
                             populateFields(job)
                         }
                     } else {
-                        showError("Failed to load job details")
+                        showError("Failed to load job details: ${response.code()}")
                     }
                 }
 
-                override fun onFailure(call: Call<JobOfferRequest>, t: Throwable) {
+                override fun onFailure(call: Call<JobOfferResponseDTO>, t: Throwable) {
                     showError("Error: ${t.localizedMessage}")
                 }
             })
     }
 
-    private fun populateFields(job: JobOfferRequest) {
+    private fun populateFields(job: JobOfferResponseDTO) {
         titleInput.setText(job.title)
         departmentInput.setText(job.department)
         descriptionInput.setText(job.description)
-        responsibilitiesInput.setText(job.responsibilities)
-        qualificationsInput.setText(job.qualifications)
-        roleInput.setText(job.role)
+        val respList: List<String> = job.responsibilities ?: emptyList<String>()
+        responsibilitiesInput.setText(respList.joinToString(separator = "\n"))
+
+        val qualsList: List<String> = mutableListOf<String>().apply {
+            addAll(job.qualificationsRequired ?: emptyList<String>())
+            addAll(job.qualificationsPreferred ?: emptyList<String>())
+        }.toList()
+        qualificationsInput.setText(qualsList.joinToString(separator = "\n"))
+        roleInput.setText(job.role ?: "")
     }
 
     private fun validateInputs(): Boolean {
@@ -170,10 +184,17 @@ class UpdateJobFragment : Fragment() {
             showError("Invalid Job ID")
             return
         }
-        val recruitingService = RetrofitClient.getRecruitingService(requireContext())
-        recruitingService.updateJobOffer(
+        val prefs = SharedPreferencesManager.getInstance(requireContext())
+        val token = prefs.getAuthToken()
+        if (token.isNullOrEmpty() || prefs.isTokenExpired()) {
+            showError("Please log in again to continue")
+            return
+        }
+        val api = RetrofitClient.getJobService(requireContext())
+        api.updateJobOffer(
             id = jobId,
-            jobOfferRequestDTO = updatedJob
+            jobOfferRequestDTO = updatedJob,
+            token = "Bearer $token"
         )
             .enqueue(object : Callback<Void> {
                 override fun onResponse(call: Call<Void>, response: Response<Void>) {
@@ -181,7 +202,12 @@ class UpdateJobFragment : Fragment() {
                         showSuccess("Job updated successfully")
                         requireActivity().supportFragmentManager.popBackStack()
                     } else {
-                        showError("Failed to update job: ${response.code()}")
+                        val err = try { response.errorBody()?.string() } catch (e: Exception) { null }
+                        if (response.code() == 401) {
+                            showError("Unauthorized (401). ${err ?: "Please log in again or contact admin."}")
+                        } else {
+                            showError("Failed to update job: ${response.code()} ${err ?: ""}")
+                        }
                     }
                 }
 

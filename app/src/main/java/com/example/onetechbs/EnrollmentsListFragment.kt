@@ -39,6 +39,7 @@ class EnrollmentsListFragment : Fragment() {
         binding.toolbarEnrollmentsList.setNavigationOnClickListener { requireActivity().onBackPressed() }
         userRole = SharedPreferencesManager.getInstance(requireContext()).getUserRole()
         setupRecyclerView()
+        binding.swipeRefreshEnrollments.setOnRefreshListener { fetchEnrollments() }
         fetchEnrollments()
     }
 
@@ -55,7 +56,9 @@ class EnrollmentsListFragment : Fragment() {
                 val token = SharedPreferencesManager.getInstance(requireContext()).getAuthToken()
                 val response = RetrofitClient.trainingService2.getAllTrainingRequests("Bearer $token")
                 if (response.isSuccessful) {
-                    val enrollments = response.body() ?: emptyList()
+                    val enrollments = (response.body() ?: emptyList())
+                        .sortedWith(compareByDescending<TrainingRequestResponseDTO> { it.requestDate }
+                            .thenByDescending { it.id })
                     if (enrollments.isEmpty()) {
                         binding.textEmptyEnrollments.visibility = View.VISIBLE
                     }
@@ -73,6 +76,7 @@ class EnrollmentsListFragment : Fragment() {
                 Toast.makeText(requireContext(), "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             } finally {
                 binding.progressBarEnrollments.visibility = View.GONE
+                binding.swipeRefreshEnrollments.isRefreshing = false
             }
         }
     }

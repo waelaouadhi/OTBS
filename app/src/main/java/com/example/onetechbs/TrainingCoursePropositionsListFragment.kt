@@ -56,6 +56,16 @@ class TrainingCoursePropositionsListFragment : Fragment() {
         if (isDhr) {
             val itemTouchHelper = androidx.recyclerview.widget.ItemTouchHelper(object : androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback(0, androidx.recyclerview.widget.ItemTouchHelper.LEFT or androidx.recyclerview.widget.ItemTouchHelper.RIGHT) {
                 override fun onMove(recyclerView: androidx.recyclerview.widget.RecyclerView, viewHolder: androidx.recyclerview.widget.RecyclerView.ViewHolder, target: androidx.recyclerview.widget.RecyclerView.ViewHolder): Boolean = false
+                override fun getSwipeDirs(recyclerView: androidx.recyclerview.widget.RecyclerView, viewHolder: androidx.recyclerview.widget.RecyclerView.ViewHolder): Int {
+                    val position = viewHolder.adapterPosition
+                    val proposition = (binding.recyclerViewPropositions.adapter as? CoursePropositionAdapter)?.getPropositionAt(position)
+                    // Only allow swipes for PENDING items; disable for APPROVED/REJECTED
+                    return if (proposition?.status?.name == "PENDING") {
+                        super.getSwipeDirs(recyclerView, viewHolder)
+                    } else {
+                        0
+                    }
+                }
                 override fun onSwiped(viewHolder: androidx.recyclerview.widget.RecyclerView.ViewHolder, direction: Int) {
                     val position = viewHolder.adapterPosition
                     val proposition = (binding.recyclerViewPropositions.adapter as? CoursePropositionAdapter)?.getPropositionAt(position)
@@ -78,6 +88,13 @@ class TrainingCoursePropositionsListFragment : Fragment() {
                     actionState: Int,
                     isCurrentlyActive: Boolean
                 ) {
+                    // Avoid drawing swipe background/icons for non-PENDING items (swipe disabled)
+                    val position = viewHolder.adapterPosition
+                    val proposition = (binding.recyclerViewPropositions.adapter as? CoursePropositionAdapter)?.getPropositionAt(position)
+                    if (proposition?.status?.name != "PENDING") {
+                        super.onChildDraw(c, recyclerView, viewHolder, 0f, dY, actionState, false)
+                        return
+                    }
                     val itemView = viewHolder.itemView
                     val context = itemView.context
                     val iconMargin = (itemView.height - 72) / 2 // icon size 72

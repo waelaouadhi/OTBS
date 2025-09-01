@@ -37,6 +37,12 @@ class CoursesListFragment : Fragment() {
         fetchCourses()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Refresh to ensure UI reflects latest enrolled/requested states
+        fetchCourses()
+    }
+
     private fun setupRecyclerView() {
         binding.recyclerViewCourses.layoutManager = LinearLayoutManager(requireContext())
     }
@@ -50,13 +56,75 @@ class CoursesListFragment : Fragment() {
                 val token = SharedPreferencesManager.getInstance(requireContext()).getAuthToken()
                 val response = RetrofitClient.trainingService2.getAllCourses("Bearer $token")
                 if (response.isSuccessful) {
-                    val courses = response.body() ?: emptyList()
-                    if (courses.isEmpty()) {
+                    val raw = (response.body() ?: emptyList())
+                        .sortedByDescending { it.id } // sort newest first
+
+                    // Server is the source of truth: refresh local cache from server flags
+                    val prefs = requireContext().getSharedPreferences("training", android.content.Context.MODE_PRIVATE)
+                    val serverEnrolled = raw.filter { it.isEnrolled }.map { it.id.toString() }.toSet()
+                    val serverRequested = raw.filter { it.isRequested }.map { it.id.toString() }.toSet()
+                    prefs.edit()
+                        .putStringSet("enrolled_ids", serverEnrolled)
+                        .putStringSet("requested_ids", serverRequested)
+                        .apply()
+
+                    // Also fetch training requests and override flags so Employee view reflects approvals immediately
+                    val trResp = RetrofitClient.trainingService2.getAllTrainingRequests("Bearer $token")
+                    val approvedIds: Set<String>
+                    val pendingIds: Set<String>
+                    val rejectedIds: Set<String>
+                    if (trResp.isSuccessful) {
+                        val reqs = trResp.body() ?: emptyList()
+                        val currentUserId = SharedPreferencesManager.getCurrentUserId(requireContext())
+                        approvedIds = reqs.filter { it.status.equals("APPROVED", ignoreCase = true) && it.employeeId == currentUserId }
+                            .mapNotNull { it.course?.id?.toString() }
+                            .toSet()
+                        pendingIds = reqs.filter { it.status.equals("PENDING", ignoreCase = true) && it.employeeId == currentUserId }
+                            .mapNotNull { it.course?.id?.toString() }
+                            .toSet()
+                        rejectedIds = reqs.filter { it.status.equals("REJECTED", ignoreCase = true) && it.employeeId == currentUserId }
+                            .mapNotNull { it.course?.id?.toString() }
+                            .toSet()
+                    } else {
+                        approvedIds = emptySet()
+                        pendingIds = emptySet()
+                        rejectedIds = emptySet()
+                    }
+
+                    val finalList = raw.map { c ->
+                        val idStr = c.id.toString()
+                        when {
+                            approvedIds.contains(idStr) -> c.copy(isEnrolled = true, isRequested = false)
+                            pendingIds.contains(idStr) -> c.copy(isEnrolled = false, isRequested = true)
+                            else -> c
+                        }
+                    }
+
+                    if (finalList.isEmpty()) {
                         binding.textEmptyCourses.visibility = View.VISIBLE
                     }
-                    adapter = CoursesAdapter(courses, userRole) { course ->
+                    // Persist cache from finalList for consistency
+                    val finalEnrolled = finalList.filter { it.isEnrolled }.map { it.id.toString() }.toSet()
+                    val finalRequested = finalList.filter { it.isRequested }.map { it.id.toString() }.toSet()
+                    prefs.edit()
+                        .putStringSet("enrolled_ids", finalEnrolled)
+                        .putStringSet("requested_ids", finalRequested)
+                        .apply()
+                    // Build per-user status map for adapter
+                    val statusMap: Map<Long, String> = finalList.associate { c ->
+                        val idStr = c.id.toString()
+                        val status = when {
+                            approvedIds.contains(idStr) -> "APPROVED"
+                            pendingIds.contains(idStr) -> "PENDING"
+                            rejectedIds.contains(idStr) -> "REJECTED"
+                            else -> null
+                        }
+                        c.id to (status ?: "")
+                    }.filterValues { it.isNotEmpty() }
+
+                    adapter = CoursesAdapter(finalList.toMutableList(), userRole, { course ->
                         onEnrollApproveClicked(course)
-                    }
+                    }, statusMap)
                     binding.recyclerViewCourses.adapter = adapter
                 } else {
                     Toast.makeText(requireContext(), "Failed to load courses", Toast.LENGTH_SHORT).show()
@@ -78,9 +146,28 @@ class CoursesListFragment : Fragment() {
                     val response = com.example.onetechbs.network.RetrofitClient.trainingService2.enrollInCourse(course.id, "Bearer $token")
                     if (response.isSuccessful) {
                         Toast.makeText(requireContext(), "Enrollment request sent!", Toast.LENGTH_SHORT).show()
-                        fetchCourses() // Refresh list to update status
+                        // Cache locally as requested to disable button immediately
+                        val prefs = requireContext().getSharedPreferences("training", android.content.Context.MODE_PRIVATE)
+                        val requested = prefs.getStringSet("requested_ids", emptySet())?.toMutableSet() ?: mutableSetOf()
+                        requested.add(course.id.toString())
+                        prefs.edit().putStringSet("requested_ids", requested).apply()
+                        // Force rebind to hide/disable buttons via cache immediately
+                        binding.recyclerViewCourses.adapter?.notifyDataSetChanged()
+                        fetchCourses()
                     } else {
-                        Toast.makeText(requireContext(), "Failed to enroll: ${response.errorBody()?.string() ?: response.code()}", Toast.LENGTH_LONG).show()
+                        val err = response.errorBody()?.string()
+                        if (response.code() == 400 && err?.contains("already requested", ignoreCase = true) == true) {
+                            // Mark as requested locally, since server says it's already requested
+                            val prefs = requireContext().getSharedPreferences("training", android.content.Context.MODE_PRIVATE)
+                            val requested = prefs.getStringSet("requested_ids", emptySet())?.toMutableSet() ?: mutableSetOf()
+                            requested.add(course.id.toString())
+                            prefs.edit().putStringSet("requested_ids", requested).apply()
+                            binding.recyclerViewCourses.adapter?.notifyDataSetChanged()
+                            Toast.makeText(requireContext(), "Already requested. Marked as pending.", Toast.LENGTH_SHORT).show()
+                            fetchCourses()
+                        } else {
+                            Toast.makeText(requireContext(), "Failed to enroll: ${err ?: response.code()}", Toast.LENGTH_LONG).show()
+                        }
                     }
                 } catch (e: Exception) {
                     Toast.makeText(requireContext(), "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()

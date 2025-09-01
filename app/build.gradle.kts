@@ -119,7 +119,10 @@ dependencies {
 
     // Lottie Animation
     implementation ("com.airbnb.android:lottie:6.4.0")
+    implementation ("com.kizitonwose.calendar:view:2.4.0")
+
+    implementation("com.vanniktech:android-image-cropper:4.6.0")
 
 
 
-}
+}   

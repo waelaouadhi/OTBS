@@ -1,6 +1,5 @@
 package com.example.onetechbs
 
-import android.R
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -10,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.onetechbs.databinding.FragmentDocumentBinding
@@ -24,6 +24,7 @@ class DocumentFragment : Fragment() {
 
     private var _binding: FragmentDocumentBinding? = null
     private val binding get() = _binding!!
+    private lateinit var documentAdapter: PersonalDocumentAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -31,8 +32,12 @@ class DocumentFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentDocumentBinding.inflate(inflater, container, false)
-        // Set up toolbar with back arrow and title
-        binding.toolbar.title = "Document Request"
+        // Set up toolbar with back arrow and title via SupportActionBar
+        (requireActivity() as? AppCompatActivity)?.apply {
+            setSupportActionBar(binding.toolbar)
+            supportActionBar?.title = getString(R.string.document_request_title)
+            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        }
         binding.toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
@@ -47,67 +52,18 @@ class DocumentFragment : Fragment() {
         val documentTypes = EDocumentType.values()
         val adapter = ArrayAdapter(
             requireContext(),
-            R.layout.simple_spinner_item,
+            android.R.layout.simple_spinner_item,
             documentTypes.map { it.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercaseChar() } }
         )
-        adapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerDocuments.adapter = adapter
 
         // 2. Set up RecyclerView for personal documents
-        val documentAdapter = PersonalDocumentAdapter(emptyList(), this::downloadDocument)
+        documentAdapter = PersonalDocumentAdapter(emptyList(), this::downloadDocument)
         binding.recyclerPersonalDocuments.adapter = documentAdapter
         binding.recyclerPersonalDocuments.setHasFixedSize(true)
         binding.recyclerPersonalDocuments.layoutManager =
             androidx.recyclerview.widget.LinearLayoutManager(requireContext())
-
-        fun fetchPersonalDocuments() {
-            try {
-                // Check if binding or RecyclerView is null
-                if (_binding == null) {
-                    Log.e("DocumentFragment", "[LAYOUT] Binding is null in fetchPersonalDocuments!")
-                }
-                if (binding.recyclerPersonalDocuments == null) {
-                    Log.e("DocumentFragment", "[LAYOUT] RecyclerView is null in fetchPersonalDocuments!")
-                }
-            } catch (e: Exception) {
-                Log.e("DocumentFragment", "[LAYOUT] Exception during layout check: ${e.localizedMessage}")
-            }
-            binding.textDocumentsHeader.text = "Loading..."
-            binding.recyclerPersonalDocuments.visibility = View.GONE
-            lifecycleScope.launch {
-                try {
-                    val prefs = com.example.onetechbs.util.SharedPreferencesManager.getInstance(requireContext())
-                    val token = prefs.getAuthToken()
-                    Log.d("DocumentFragment", "[GET] Token: $token")
-                    Log.d("DocumentFragment", "[GET] Authorization header: Bearer $token")
-                    if (token.isNullOrEmpty()) {
-                        binding.textDocumentsHeader.text = "Authentication error: missing token."
-                        return@launch
-                    }
-                    // Use the centralized Retrofit client
-                    val response = RetrofitClient.documentService.getPersonalDocuments("Bearer $token")
-                    Log.d("DocumentFragment", "[GET] Response code: ${'$'}{response.code()}")
-                    Log.d("DocumentFragment", "[GET] Response message: ${'$'}{response.message()}")
-                    // --- END: Logging HTTP communication ---
-                    if (response.isSuccessful) {
-                        val docs = response.body() ?: emptyList()
-                        documentAdapter.updateData(docs)
-                        val msg = if (docs.isEmpty()) "No requested documents yet." else "Your Requested Documents"
-                        binding.textDocumentsHeader.text = msg
-                        Log.e("DocumentFragment", "[UI] $msg")
-                        binding.recyclerPersonalDocuments.visibility = View.VISIBLE
-                    } else {
-                        val msg = "Failed to load documents (${response.code()})"
-                        binding.textDocumentsHeader.text = msg
-                        Log.e("DocumentFragment", "[UI] $msg")
-                    }
-                } catch (e: Exception) {
-                    val msg = "Error loading documents: ${e.localizedMessage}"
-                    binding.textDocumentsHeader.text = msg
-                    Log.e("DocumentFragment", "[UI] $msg")
-                }
-            }
-        }
 
         fetchPersonalDocuments()
 
@@ -151,6 +107,10 @@ class DocumentFragment : Fragment() {
                         Toast.makeText(requireContext(), "Request sent successfully!", Toast.LENGTH_LONG).show()
                         binding.editNote.setText("")
                         binding.spinnerDocuments.setSelection(0)
+                        // Auto-refresh the list so the new request appears immediately
+                        fetchPersonalDocuments()
+                        // Optionally scroll to top
+                        binding.recyclerPersonalDocuments.scrollToPosition(0)
                     } else {
                         Toast.makeText(requireContext(), "Failed: ${response.code()} - ${response.message()}", Toast.LENGTH_LONG).show()
                     }
@@ -160,6 +120,57 @@ class DocumentFragment : Fragment() {
                     binding.buttonRequestDocument.isEnabled = true
                 }
             }
+        }
+    }
+
+    private fun fetchPersonalDocuments() {
+        try {
+            if (_binding == null) {
+                Log.e("DocumentFragment", "[LAYOUT] Binding is null in fetchPersonalDocuments!")
+            }
+        } catch (e: Exception) {
+            Log.e("DocumentFragment", "[LAYOUT] Exception during layout check: ${e.localizedMessage}")
+        }
+        binding.textDocumentsHeader.text = "Loading..."
+        binding.recyclerPersonalDocuments.visibility = View.GONE
+        lifecycleScope.launch {
+            try {
+                val prefs = com.example.onetechbs.util.SharedPreferencesManager.getInstance(requireContext())
+                val token = prefs.getAuthToken()
+                Log.d("DocumentFragment", "[GET] Token: $token")
+                Log.d("DocumentFragment", "[GET] Authorization header: Bearer $token")
+                if (token.isNullOrEmpty()) {
+                    binding.textDocumentsHeader.text = "Authentication error: missing token."
+                    return@launch
+                }
+                val response = RetrofitClient.documentService.getPersonalDocuments("Bearer $token")
+                Log.d("DocumentFragment", "[GET] Response code: ${'$'}{response.code()}")
+                Log.d("DocumentFragment", "[GET] Response message: ${'$'}{response.message()}")
+                if (response.isSuccessful) {
+                    val docs = response.body() ?: emptyList()
+                    documentAdapter.updateData(docs)
+                    val msg = if (docs.isEmpty()) "No requested documents yet." else "Your Requested Documents"
+                    binding.textDocumentsHeader.text = msg
+                    Log.e("DocumentFragment", "[UI] $msg")
+                    binding.recyclerPersonalDocuments.visibility = View.VISIBLE
+                } else {
+                    val msg = "Failed to load documents (${response.code()})"
+                    binding.textDocumentsHeader.text = msg
+                    Log.e("DocumentFragment", "[UI] $msg")
+                }
+            } catch (e: Exception) {
+                val msg = "Error loading documents: ${e.localizedMessage}"
+                binding.textDocumentsHeader.text = msg
+                Log.e("DocumentFragment", "[UI] $msg")
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh when returning to this fragment to reflect any new/changed requests
+        if (this::documentAdapter.isInitialized && _binding != null) {
+            fetchPersonalDocuments()
         }
     }
 

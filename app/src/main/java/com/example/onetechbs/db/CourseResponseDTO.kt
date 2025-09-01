@@ -1,6 +1,7 @@
 package com.example.onetechbs.db
 
 import java.math.BigDecimal
+import com.google.gson.annotations.SerializedName
 
 data class CourseResponseDTO(
     val id: Long,
@@ -8,6 +9,6 @@ data class CourseResponseDTO(
     val description: String,
     val hasCertification: Boolean,
     val cost: BigDecimal?,
-    val isEnrolled: Boolean,
-    val isRequested: Boolean
+    @SerializedName(value = "isEnrolled", alternate = ["enrolled", "IsEnrolled", "is_enrolled"]) val isEnrolled: Boolean,
+    @SerializedName(value = "isRequested", alternate = ["requested", "IsRequested", "is_requested"]) val isRequested: Boolean
 )

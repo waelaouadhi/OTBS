@@ -167,4 +167,7 @@
     <color name="available_color">#4CAF50</color>
     <color name="unavailable_color">#F44336</color>
     <color name="teal_700">#018786</color>
+    <color name="blue">#2196F3</color>
+    <color name="yellow">#FFEB3B</color>
+    <color name="grey">#BDBDBD</color>
 </resources>

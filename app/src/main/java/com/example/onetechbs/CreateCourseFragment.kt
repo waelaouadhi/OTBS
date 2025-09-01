@@ -38,15 +38,18 @@ class CreateCourseFragment : Fragment() {
 
         toolbar.setNavigationOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
 
+        // Hide cost input from UI entirely (temporarily disabled feature)
+        editTextCost.visibility = View.GONE
+
         btnSubmit.setOnClickListener {
             val title = editTextTitle.text.toString().trim()
             val description = editTextDescription.text.toString().trim()
             val hasCertification = switchCertification.isChecked
-            val costText = editTextCost.text.toString().trim()
-            val cost = costText.toBigDecimalOrNull()
+            // Force cost to 1 by default and do not expose it in UI
+            val cost = BigDecimal.ONE
 
-            if (title.isEmpty() || description.isEmpty() || cost == null) {
-                Toast.makeText(requireContext(), "Please fill all fields correctly.", Toast.LENGTH_SHORT).show()
+            if (title.isEmpty() || description.isEmpty()) {
+                Toast.makeText(requireContext(), "Please fill the required fields.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

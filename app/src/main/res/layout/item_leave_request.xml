@@ -28,6 +28,7 @@
                 android:src="@drawable/ic_person"
                 android:background="@drawable/circle_background"
                 android:padding="12dp"
+                android:contentDescription="@string/employee_avatar"
                 app:tint="?attr/colorPrimary"/>
 
             <LinearLayout
@@ -56,16 +57,16 @@
 
             </LinearLayout>
 
-            <TextView
+            <com.google.android.material.chip.Chip
                 android:id="@+id/status"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="6dp"
-                android:background="@drawable/status_background"
-                android:textAppearance="?attr/textAppearanceCaption"
-                android:textStyle="bold"
-                tools:text="Pending"/>
+                android:checkable="false"
+                android:clickable="false"
+                app:chipIconVisible="false"
+                app:chipStrokeWidth="1dp"
+                tools:text="Pending" />
 
         </LinearLayout>
 
@@ -92,6 +93,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_time"
+                    android:contentDescription="@string/leave_date_range"
                     app:tint="?android:attr/textColorSecondary"/>
 
                 <TextView
@@ -118,16 +120,20 @@
         <!-- Action Buttons -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="86dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="8dp">
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="12dp"
+            android:paddingTop="0dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDownloadAttachment"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="49dp"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="4dp"
+                android:minHeight="48dp"
+                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:text="Certificate"
                 android:textSize="12sp"
@@ -141,7 +147,8 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="4dp"
+                android:minHeight="48dp"
+                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:text="Approve"
                 android:textColor="@color/calendar_bg"
@@ -152,7 +159,8 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
+                android:minHeight="48dp"
+                android:layout_marginStart="0dp"
                 android:layout_weight="1"
                 android:text="Reject"
                 android:textColor="@android:color/white"
@@ -162,4 +170,4 @@
 
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView> 
+</com.google.android.material.card.MaterialCardView>

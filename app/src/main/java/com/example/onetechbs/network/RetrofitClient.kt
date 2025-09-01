@@ -20,6 +20,11 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 @RequiresApi(Build.VERSION_CODES.O)
 object RetrofitClient {
@@ -36,16 +41,17 @@ object RetrofitClient {
      *  * and includes interceptors for adding authentication headers and logging requests and responses.
      *
      */
-    private const val AUTH_BASE_URL = "http://172.31.4.45:8081/"
-    private const val EMPLOYEE_BASE_URL = "http://172.31.4.45:8082/"
-    private const val LEAVE_BASE_URL = "http://172.31.4.45:8083/"
-    private const val TRAINING_BASE_URL = "http://172.31.4.45:8087/"
-    private const val NOTIFICATION_BASE_URL = "http://172.31.4.45:8086/"
-    private const val MED_BASE_URL = "http://172.31.4.45:8085/"
-    private const val RECRUITING_BASE_URL = "http://172.31.4.45:8087/"
-    private const val CONDIDATE_BASE_URL = "http://172.31.4.45:8089/"
-    private const val DOCUMENTS_BASE_URL = "http://172.31.4.45:8093/"
-
+    private const val AUTH_BASE_URL = "http://192.168.1.184:8081/"
+    private const val EMPLOYEE_BASE_URL = "http://192.168.1.184:8082/"
+    private const val LEAVE_BASE_URL = "http://192.168.1.184:8083/"
+    private const val TRAINING_BASE_URL = "http://192.168.1.184:8087/"
+    private const val NOTIFICATION_BASE_URL = "http://192.168.1.184:8086/"
+    private const val MED_BASE_URL = "http://192.168.1.184:8085/"
+    private const val RECRUITING_BASE_URL = "http://192.168.1.184:8088/"
+    private const val CONDIDATE_BASE_URL = "http://192.168.1.184:8089/"
+    private const val DOCUMENTS_BASE_URL = "http://192.168.1.184:8093/"
+    private const val JOB_BASE_URL = "http://192.168.1.184:8080/"
+    private const val AI_BASE_URL = "http://192.168.1.184:5001/"
 
     private const val CONNECT_TIMEOUT = 30L
     private const val READ_TIMEOUT = 30L
@@ -109,6 +115,10 @@ object RetrofitClient {
         createRetrofit(EMPLOYEE_BASE_URL).create(ApiService::class.java)
     }
 
+    val userService: ApiService by lazy {
+        createRetrofit(EMPLOYEE_BASE_URL).create(ApiService::class.java)
+    }
+
     val leaveService: ApiService by lazy {
         createRetrofit(LEAVE_BASE_URL).create(ApiService::class.java)
     }
@@ -136,6 +146,7 @@ object RetrofitClient {
                 }
                 chain.proceed(requestBuilder.build())
             }
+            .addInterceptor(loggingInterceptor)
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
@@ -205,6 +216,37 @@ object RetrofitClient {
 
         return Retrofit.Builder()
             .baseUrl(RECRUITING_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+    }
+
+    fun getJobClient(token: String): Retrofit {
+        val gson = GsonBuilder()
+            .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .registerTypeAdapter(java.time.Instant::class.java, com.example.onetechbs.util.InstantAdapter())
+            .create()
+
+        val okHttpClient = OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val builder = chain.request().newBuilder()
+                if (token.isNotBlank()) {
+                    val authValue = if (token.startsWith("Bearer ", ignoreCase = true)) token else "Bearer $token"
+                    // Use header() to replace any existing Authorization header to avoid duplicates
+                    builder.header("Authorization", authValue)
+                }
+                chain.proceed(builder.build())
+            }
+            .addInterceptor(loggingInterceptor)
+            .retryOnConnectionFailure(true)
+            .build()
+
+        return Retrofit.Builder()
+            .baseUrl(JOB_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
@@ -322,5 +364,141 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(TrainingService::class.java)
+    }
+
+    // Job service without automatic Authorization header (call sites will pass @Header)
+    fun getJobService(context: Context): ApiService {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .build()
+
+        val gson = GsonBuilder()
+            .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .registerTypeAdapter(java.time.Instant::class.java, com.example.onetechbs.util.InstantAdapter())
+            .create()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl(JOB_BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .client(okHttpClient)
+            .build()
+        return retrofit.create(ApiService::class.java)
+    }
+
+    // Candidate service that injects Authorization header from SharedPreferences
+    fun getCandidateService(context: Context): ApiService {
+        val prefs = SharedPreferencesManager.getInstance(context)
+        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+        val client = OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val req = chain.request().newBuilder().apply {
+                    val t = prefs.getAuthToken()
+                    if (!t.isNullOrEmpty()) addHeader("Authorization", "Bearer $t")
+                }.build()
+                chain.proceed(req)
+            }
+            .addInterceptor(logging)
+            .build()
+
+        val gson = GsonBuilder()
+            .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .registerTypeAdapter(java.time.Instant::class.java, com.example.onetechbs.util.InstantAdapter())
+            .create()
+
+        return Retrofit.Builder()
+            .baseUrl(CONDIDATE_BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+            .create(ApiService::class.java)
+    }
+
+    // User endpoints service (points to EMPLOYEE_BASE_URL = 8082)
+    fun getUserService(context: Context): ApiService {
+        val prefs = SharedPreferencesManager.getInstance(context)
+
+        val okHttpClient = OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val requestBuilder = chain.request().newBuilder()
+                val t = prefs.getAuthToken()
+                if (!t.isNullOrEmpty()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $t")
+                }
+                chain.proceed(requestBuilder.build())
+            }
+            .addInterceptor(loggingInterceptor)
+            .retryOnConnectionFailure(true)
+            .build()
+
+        val gson = GsonBuilder()
+            .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .registerTypeAdapter(java.time.Instant::class.java, com.example.onetechbs.util.InstantAdapter())
+            .create()
+
+        return Retrofit.Builder()
+            .baseUrl(EMPLOYEE_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+            .create(ApiService::class.java)
+    }
+
+    // Unsafe OkHttpClient for development to accept self-signed certs on 192.168.1.184
+    private fun getUnsafeOkHttpClient(): OkHttpClient {
+        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+            override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+            override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+            override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+        })
+
+        val sslContext = SSLContext.getInstance("SSL").apply {
+            init(null, trustAllCerts, java.security.SecureRandom())
+        }
+        val sslSocketFactory: SSLSocketFactory = sslContext.socketFactory
+
+        return OkHttpClient.Builder()
+            .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
+            .hostnameVerifier(HostnameVerifier { _, _ -> true })
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .addInterceptor(loggingInterceptor)
+            .build()
+    }
+
+    fun getAiService(): AiApiService {
+        val gson = GsonBuilder()
+            .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .registerTypeAdapter(java.time.Instant::class.java, com.example.onetechbs.util.InstantAdapter())
+            .create()
+
+        // Use a standard client for HTTP (no SSL) with logging
+        val httpClient = OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .addInterceptor(loggingInterceptor)
+            .build()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl(AI_BASE_URL)
+            .client(httpClient)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+
+        return retrofit.create(AiApiService::class.java)
     }
 }

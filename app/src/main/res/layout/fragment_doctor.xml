@@ -74,23 +74,37 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/doctorNameLayout" />
 
-        <com.github.sundeepk.compactcalendarview.CompactCalendarView
-            android:id="@+id/compactCalendarView"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/calendarCard"
             android:layout_width="0dp"
-            android:layout_height="150dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:ccv_bg_color="@color/calendar_bg"
-            app:ccv_current_day_background_color="@color/colorAccent"
-            app:ccv_current_day_text_color="@color/current_day_text"
-            app:ccv_month_text_color="@color/month_text_color"
-            app:ccv_selected_day_background_color="@color/selected_day_bg"
-            app:ccv_selected_day_text_color="@color/selected_day_text"
-            app:ccv_text_color="@color/calendar_text"
-
-
+            app:cardUseCompatPadding="true"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
             app:layout_constraintTop_toBottomOf="@id/dateSelectionTitle"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <com.github.sundeepk.compactcalendarview.CompactCalendarView
+                    android:id="@+id/compactCalendarView"
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    app:ccv_bg_color="@android:color/transparent"
+                    app:ccv_current_day_background_color="@color/colorAccent"
+                    app:ccv_current_day_text_color="@color/current_day_text"
+                    app:ccv_month_text_color="@color/month_text_color"
+                    app:ccv_selected_day_background_color="@color/selected_day_bg"
+                    app:ccv_selected_day_text_color="@color/selected_day_text"
+                    app:ccv_text_color="@color/calendar_text" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/selectedDateCard"
@@ -99,7 +113,7 @@
             android:layout_marginTop="16dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="2dp"
-            app:layout_constraintTop_toBottomOf="@id/compactCalendarView"
+            app:layout_constraintTop_toBottomOf="@id/calendarCard"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 

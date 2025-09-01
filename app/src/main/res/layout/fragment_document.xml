@@ -11,10 +11,11 @@
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="?attr/actionBarSize"
         android:background="@color/colorPrimary"
-        android:title="Document Request"
-        android:titleTextColor="@color/black"
+        app:title="@string/document_request_title"
+        app:titleCentered="true"
+        android:titleTextColor="@color/calendar_bg"
         app:navigationIcon="@drawable/ic_arrow_back" />
 
     <LinearLayout
