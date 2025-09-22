@@ -22,10 +22,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import com.example.onetechbs.databinding.FragmentProfileBinding
 import com.example.onetechbs.db.UserResponseDTO
 import com.example.onetechbs.network.RetrofitClient
-import com.canhub.cropper.CropImageContract
-import com.canhub.cropper.CropImageContractOptions
-import com.canhub.cropper.CropImageOptions
-import com.canhub.cropper.CropImageView
+import android.app.Activity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,89 +47,30 @@ class ProfileFragment : Fragment() {
     private var selectedImageUri: Uri? = null
     private var lastPickedImageUri: Uri? = null
 
-    private val cropImageLauncher = registerForActivityResult(CropImageContract()) { result ->
-        if (result.isSuccessful) {
-            val uriContent = result.uriContent
-            if (uriContent != null) {
-                // Show confirm/retry dialog before applying
-                showCropConfirmDialog(uriContent)
-                Log.d(TAG, "Image cropped: uri=$uriContent")
+    private val cropActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val croppedUri = result.data?.getParcelableExtra<Uri>(CropActivity.EXTRA_CROPPED_URI)
+            if (croppedUri != null) {
+                selectedImageUri = croppedUri
+                _binding?.profileImage?.setImageURI(croppedUri)
+                Log.d(TAG, "Image cropped successfully: uri=$croppedUri")
+            } else {
+                Log.e(TAG, "Cropped URI is null")
             }
         } else {
-            Log.e(TAG, "Crop error", result.error)
+            Log.d(TAG, "Crop was cancelled")
         }
     }
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
-            Log.d(TAG, "Image selected, launching cropper: uri=$uri")
+            Log.d(TAG, "Image selected, launching custom cropper: uri=$uri")
             lastPickedImageUri = uri
-            val options = CropImageOptions(
-                // UX: clear avatar-focused defaults
-                guidelines = CropImageView.Guidelines.ON,
-                cropShape = CropImageView.CropShape.OVAL, // circular overlay for avatar
-                fixAspectRatio = true, // lock to 1:1
-                aspectRatioX = 1,
-                aspectRatioY = 1,
-
-                // Interaction
-                allowFlipping = false, // rarely useful for avatars; reduce clutter
-                allowRotation = true,
-                autoZoomEnabled = true,
-                multiTouchEnabled = true,
-                initialCropWindowPaddingRatio = 0.1f,
-
-                // Output
-                outputCompressFormat = Bitmap.CompressFormat.JPEG,
-                outputCompressQuality = 90,
-
-                // UI
-                activityTitle = "Crop profile photo"
-            )
-            cropImageLauncher.launch(CropImageContractOptions(uri, options))
+            val intent = CropActivity.newIntent(requireContext(), uri)
+            cropActivityLauncher.launch(intent)
         }
     }
 
-    private fun showCropConfirmDialog(croppedUri: Uri) {
-        val ctx = requireContext()
-        val preview = ImageView(ctx).apply {
-            adjustViewBounds = true
-            setImageURI(croppedUri)
-            contentDescription = "Cropped image preview"
-        }
-        AlertDialog.Builder(ctx)
-            .setTitle("Use this photo?")
-            .setView(preview)
-            .setPositiveButton("Confirm") { dialog, _ ->
-                selectedImageUri = croppedUri
-                _binding?.profileImage?.setImageURI(croppedUri)
-                dialog.dismiss()
-            }
-            .setNegativeButton("Retry") { dialog, _ ->
-                dialog.dismiss()
-                lastPickedImageUri?.let { src ->
-                    // Relaunch cropper with same source
-                    val options = CropImageOptions(
-                        guidelines = CropImageView.Guidelines.ON,
-                        cropShape = CropImageView.CropShape.OVAL,
-                        fixAspectRatio = true,
-                        aspectRatioX = 1,
-                        aspectRatioY = 1,
-                        allowFlipping = false,
-                        allowRotation = true,
-                        autoZoomEnabled = true,
-                        multiTouchEnabled = true,
-                        initialCropWindowPaddingRatio = 0.1f,
-                        outputCompressFormat = Bitmap.CompressFormat.JPEG,
-                        outputCompressQuality = 90,
-                        activityTitle = "Crop profile photo"
-                    )
-                    cropImageLauncher.launch(CropImageContractOptions(src, options))
-                }
-            }
-            .setCancelable(true)
-            .show()
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?

@@ -24,6 +24,8 @@ import com.example.onetechbs.db.EventType
 import com.example.onetechbs.db.EventStatus
 import com.example.onetechbs.CalendarDayViewHolder
 import com.example.onetechbs.CalendarViewModel
+import com.example.onetechbs.model.Holiday
+import com.example.onetechbs.network.HolidayApiService
 import com.example.onetechbs.network.RetrofitClient
 
 import com.kizitonwose.calendar.core.CalendarDay
@@ -40,6 +42,7 @@ import retrofit2.Response
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import android.graphics.Color
 import android.graphics.BitmapFactory
 import android.util.Log
@@ -51,6 +54,7 @@ import android.animation.ObjectAnimator
 import android.animation.AnimatorSet
 import android.animation.AnimatorListenerAdapter
 import android.util.Base64
+import android.util.TypedValue
 import org.json.JSONObject
 
 class Homefra : Fragment() {
@@ -75,7 +79,7 @@ class Homefra : Fragment() {
     private var leaveUsedTextView: TextView? = null
 
     private val calendarViewModel: CalendarViewModel by viewModels()
-    private val holidays = setOf<LocalDate>() // Add your holidays here if needed
+    private var holidays = setOf<LocalDate>() // This will be populated from the API.
     private lateinit var calendarEventService: CalendarEventService
     private lateinit var gestureDetector: GestureDetectorCompat
     private lateinit var calendarView: CalendarView
@@ -126,12 +130,21 @@ class Homefra : Fragment() {
         // Load dynamic events from appointments and leaves
         loadCalendarEvents()
 
+        // Fetch public holidays (temporarily using mock data due to API rate limits)
+        // fetchHolidays()
+        loadMockHolidays()
+
         // --- CalendarView integration ---
         val calendarFrame = binding.root.findViewById<FrameLayout>(R.id.CalendarFrame)
         calendarView = CalendarView(requireContext())
+        // Calculate the height of 6 rows of dates to set a fixed height for the calendar.
+        // This is a major performance optimization to prevent the calendar from measuring all months at once.
+        val dayHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 50f, resources.displayMetrics).toInt()
+        val calendarHeight = dayHeight * 6
+
         calendarView.layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT
+            calendarHeight
         )
         calendarFrame.addView(calendarView)
 
@@ -268,7 +281,7 @@ class Homefra : Fragment() {
                         EventType.SICK -> ContextCompat.getDrawable(requireContext(), R.drawable.dot_red)
                         EventType.DOCTOR -> ContextCompat.getDrawable(requireContext(), R.drawable.dot_blue)
                         EventType.TRAINING -> ContextCompat.getDrawable(requireContext(), R.drawable.dot_yellow)
-                        EventType.HOLIDAY -> ContextCompat.getDrawable(requireContext(), R.drawable.dot_grey)
+                        EventType.HOLIDAY -> ContextCompat.getDrawable(requireContext(), R.drawable.dot_red) // Red dot for holidays
                     }
                     container.eventDotsContainer.addView(dot)
                 }
@@ -639,6 +652,79 @@ class Homefra : Fragment() {
                 Log.d("Homefra", "Image load cancelled")
             } catch (e: Exception) {
                 Log.e("Homefra", "Failed to load profile image", e)
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun loadMockHolidays() {
+        Log.d("Homefra", "Loading mock holidays for testing.")
+        val mockHolidays = listOf(
+            CalendarEvent(date = LocalDate.of(2025, 1, 1), type = EventType.HOLIDAY, status = EventStatus.APPROVED, title = "New Year's Day"),
+            CalendarEvent(date = LocalDate.of(2025, 3, 20), type = EventType.HOLIDAY, status = EventStatus.APPROVED, title = "Independence Day"),
+            CalendarEvent(date = LocalDate.of(2025, 4, 9), type = EventType.HOLIDAY, status = EventStatus.APPROVED, title = "Martyrs' Day"),
+            CalendarEvent(date = LocalDate.of(2025, 5, 1), type = EventType.HOLIDAY, status = EventStatus.APPROVED, title = "Labour Day"),
+            CalendarEvent(date = LocalDate.of(2025, 7, 25), type = EventType.HOLIDAY, status = EventStatus.APPROVED, title = "Republic Day")
+        )
+
+        val currentEvents = calendarViewModel.events.value.toMutableList()
+        currentEvents.addAll(mockHolidays)
+        calendarViewModel.setEvents(currentEvents)
+
+        holidays = mockHolidays.map { it.date }.toSet()
+        Toast.makeText(requireContext(), "Showing mock holidays", Toast.LENGTH_SHORT).show()
+    }
+
+
+    // NOTE: Temporarily disabled due to API rate limiting.
+    // Re-enable this function and the call in onCreateView when the API is accessible.
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun fetchHolidays() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val holidayService = RetrofitClient.getHolidayService()
+                val response = holidayService.getHolidays(
+                    apiKey = "5zdb1nzjLyJIZ9w3ezSHZw==AOZIvaXvNT5ZBHG0",
+                    country = "TN",
+                    year = 2025 ,
+                    type = "public_holiday"
+                )
+
+                if (response.isSuccessful) {
+                    val holidayList = response.body() ?: emptyList()
+                    Log.d("Homefra", "Fetched ${holidayList.size} holidays.")
+
+                    val holidayEvents = holidayList.mapNotNull { holiday ->
+                        try {
+                            val date = LocalDate.parse(holiday.date, DateTimeFormatter.ISO_LOCAL_DATE)
+                            Log.d("Homefra", "Holiday: ${holiday.name} on $date")
+                            CalendarEvent(
+                                title = holiday.name,
+                                date = date,
+                                type = EventType.HOLIDAY,
+                                status = EventStatus.APPROVED // Holidays are always approved
+                            )
+                        } catch (e: Exception) {
+                            Log.e("Homefra", "Error parsing holiday date: ${holiday.date}", e)
+                            null
+                        }
+                    }
+
+                    // Add holidays to the view model
+                    val currentEvents = calendarViewModel.events.value.toMutableList()
+                    currentEvents.addAll(holidayEvents)
+                    calendarViewModel.setEvents(currentEvents)
+
+                    // Update the local holidays set for styling if needed
+                    holidays = holidayEvents.map { it.date }.toSet()
+
+                } else {
+                    Log.e("Homefra", "Failed to fetch holidays: ${response.code()} - ${response.message()}")
+                    Toast.makeText(requireContext(), "Failed to load holidays", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("Homefra", "Error fetching holidays", e)
+                Toast.makeText(requireContext(), "An error occurred while fetching holidays", Toast.LENGTH_SHORT).show()
             }
         }
     }

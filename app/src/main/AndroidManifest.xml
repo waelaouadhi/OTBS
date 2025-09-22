@@ -49,6 +49,8 @@
 
         <!-- Login Activity -->
         <activity
+            android:name=".CropActivity" />
+        <activity
             android:name=".LoginActivity"
             android:windowSoftInputMode="adjustResize"
             android:exported="false" />

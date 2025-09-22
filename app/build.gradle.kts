@@ -28,19 +28,19 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 
     buildFeatures {
         compose = true
         viewBinding = true
     }
-    packagingOptions {
+    packaging {
         resources {
             excludes += "META-INF/INDEX.LIST"
             excludes += "META-INF/DEPENDENCIES"
@@ -121,7 +121,6 @@ dependencies {
     implementation ("com.airbnb.android:lottie:6.4.0")
     implementation ("com.kizitonwose.calendar:view:2.4.0")
 
-    implementation("com.vanniktech:android-image-cropper:4.6.0")
 
 
 

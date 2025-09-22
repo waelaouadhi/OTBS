@@ -52,6 +52,7 @@ object RetrofitClient {
     private const val DOCUMENTS_BASE_URL = "http://192.168.1.184:8093/"
     private const val JOB_BASE_URL = "http://192.168.1.184:8080/"
     private const val AI_BASE_URL = "http://192.168.1.184:5001/"
+    private const val HOLIDAY_API_BASE_URL = "https://api.api-ninjas.com/"
 
     private const val CONNECT_TIMEOUT = 30L
     private const val READ_TIMEOUT = 30L
@@ -476,6 +477,23 @@ object RetrofitClient {
             .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
             .addInterceptor(loggingInterceptor)
             .build()
+    }
+
+    fun getHolidayService(): HolidayApiService {
+        val httpClient = OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .addInterceptor(loggingInterceptor)
+            .build()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl(HOLIDAY_API_BASE_URL)
+            .client(httpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        return retrofit.create(HolidayApiService::class.java)
     }
 
     fun getAiService(): AiApiService {
